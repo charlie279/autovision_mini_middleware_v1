@@ -1,7 +1,6 @@
 build/
 assets/input_*.rgb
 logs/
-docs/performance_report.md
 compile_commands.json
 .vscode/
 *.o
