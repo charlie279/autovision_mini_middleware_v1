@@ -7,3 +7,5 @@ compile_commands.json
 *.a
 *.so
 assets/
+examples/bin/
+examples/logs/
