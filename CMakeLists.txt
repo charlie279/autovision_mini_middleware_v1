@@ -31,7 +31,12 @@ target_link_libraries(media_node avm_common)
 add_executable(preprocess_node src/preprocess_node.cpp)
 target_link_libraries(preprocess_node avm_common)
 
-add_executable(npu_stub_node src/npu_stub_node.cpp)
+add_executable(npu_stub_node
+    src/npu_stub_node.cpp
+    src/dummy_runtime.cpp
+    src/rknn_runtime_stub.cpp
+    src/runtime_factory.cpp
+)
 target_link_libraries(npu_stub_node avm_common)
 
 add_executable(safety_monitor src/safety_monitor.cpp)
