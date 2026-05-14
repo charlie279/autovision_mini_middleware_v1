@@ -3,14 +3,6 @@
 # 功能：
 #   统一编译和运行 examples/cpp/ 下的 C++ 示例程序。
 #   每个示例用于单独理解一个模块的接口调用方式。
-#
-# 用法：
-#   make list
-#   make run EXAMPLE=00_crc32
-#   make run EXAMPLE=03_file_adapter
-#   make all
-#   make run_frame_ipc
-#   make clean
 
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -Wpedantic -O2 -I../include
@@ -31,7 +23,8 @@ EXAMPLES := \
 	06_shm_ring_buffer \
 	07_shared_status \
 	09_sensor_to_shm \
-	10_control_query
+	10_control_query \
+	11_camera_adapter_v4l2
 
 SRCS_00_crc32 := \
 	$(CPP_DIR)/00_crc32.cpp \
@@ -73,6 +66,10 @@ SRCS_09_sensor_to_shm := \
 
 SRCS_10_control_query := \
 	$(CPP_DIR)/10_control_query.cpp
+
+SRCS_11_camera_adapter_v4l2 := \
+	$(CPP_DIR)/11_camera_adapter_v4l2.cpp \
+	../src/camera_adapter_v4l2.cpp
 
 PIPELINE_SRCS_PRODUCER := \
 	$(CPP_DIR)/08_frame_producer.cpp \
@@ -133,6 +130,9 @@ $(BIN_DIR)/09_sensor_to_shm: $(SRCS_09_sensor_to_shm) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(BIN_DIR)/10_control_query: $(SRCS_10_control_query) | dirs
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(BIN_DIR)/11_camera_adapter_v4l2: $(SRCS_11_camera_adapter_v4l2) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 frame_ipc: dirs
