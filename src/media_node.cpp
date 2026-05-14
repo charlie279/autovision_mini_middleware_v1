@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
     const int frames = std::stoi(arg_value(argc, argv, "--frames", "120"));
     const auto width = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--width", "640")));
     const auto height = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--height", "480")));
+    const auto camera_fps = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--fps", "30")));
     const bool inject_bad_crc = has_flag(argc, argv, "--inject-bad-crc");
     const bool inject_frame_jump = has_flag(argc, argv, "--inject-frame-jump");
 
@@ -58,7 +59,7 @@ int main(int argc, char** argv) {
     } else if (source == "lidar_sim") {
         adapter = std::make_unique<LidarSimAdapter>();
     } else if (source == "camera") {
-        adapter = std::make_unique<CameraAdapterV4L2>(device, width, height);
+        adapter = std::make_unique<CameraAdapterV4L2>(device, width, height, camera_fps);
     } else {
         std::cerr << "[media_node] unsupported source: " << source << "\n";
         return 1;
@@ -136,12 +137,14 @@ int main(int argc, char** argv) {
                       << " buffer_index=" << meta.buffer_index << "\n";
         }
 
-        std::uint32_t fps = status.desired_fps();
-        if (fps == 0) {
-            fps = avm::kDefaultFps;
+        if (source != "camera") {
+            std::uint32_t fps = status.desired_fps();
+            if (fps == 0) {
+                fps = avm::kDefaultFps;
+            }
+            next_tick += std::chrono::milliseconds(1000 / static_cast<int>(fps));
+            std::this_thread::sleep_until(next_tick);
         }
-        next_tick += std::chrono::milliseconds(1000 / static_cast<int>(fps));
-        std::this_thread::sleep_until(next_tick);
     }
 
     adapter->stop();
