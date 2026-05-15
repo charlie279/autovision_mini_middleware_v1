@@ -36,6 +36,9 @@ int main(int argc, char** argv) {
     const int period_ms = std::stoi(arg_value(argc, argv, "--period-ms", "200"));
     const std::uint64_t timeout_ns =
         static_cast<std::uint64_t>(std::stoull(arg_value(argc, argv, "--timeout-ms", "1500"))) * 1'000'000ULL;
+    const bool auto_degrade = arg_value(argc, argv, "--auto-degrade", "true") != "false";
+    const auto degraded_fps = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--degraded-fps", "15")));
+    const auto normal_fps = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--normal-fps", "30")));
 
     SharedStatus status;
     status.create_or_open(avm::kStatusName);
@@ -43,6 +46,8 @@ int main(int argc, char** argv) {
     SafetyState current_state = SafetyState::NORMAL;
     std::uint64_t last_crc_errors = 0;
     std::uint64_t last_frame_jumps = 0;
+    std::uint64_t last_alive_errors = 0;
+    std::uint64_t last_queue_drops = 0;
     int fault_score = 0;
     const int ticks = duration_sec * 1000 / period_ms;
 
@@ -55,6 +60,8 @@ int main(int argc, char** argv) {
         const bool npu_timeout = heartbeat_timeout(snapshot.npu, now, timeout_ns);
         const bool crc_increased = snapshot.preprocess.crc_error_count > last_crc_errors;
         const bool jump_increased = snapshot.preprocess.frame_jump_count > last_frame_jumps;
+        const bool alive_increased = snapshot.preprocess.alive_error_count > last_alive_errors;
+        const bool drop_increased = snapshot.media.queue_drop_count > last_queue_drops;
 
         ErrorCode error_code = ErrorCode::OK;
         std::string reason = "NORMAL";
@@ -70,6 +77,14 @@ int main(int argc, char** argv) {
         } else if (jump_increased) {
             error_code = ErrorCode::FRAME_ID_JUMP;
             reason = "frame id jump detected";
+            fault_score += 1;
+        } else if (alive_increased) {
+            error_code = ErrorCode::ALIVE_COUNTER_ERROR;
+            reason = "alive counter jump detected";
+            fault_score += 1;
+        } else if (drop_increased) {
+            error_code = ErrorCode::QUEUE_DROP;
+            reason = "queue drop detected";
             fault_score += 1;
         } else {
             fault_score = std::max(0, fault_score - 1);
@@ -90,8 +105,17 @@ int main(int argc, char** argv) {
         }
 
         status.set_safety(current_state, error_code, reason);
+        if (auto_degrade) {
+            if (current_state == SafetyState::DEGRADED) {
+                status.set_desired_fps(degraded_fps);
+            } else if (current_state == SafetyState::NORMAL) {
+                status.set_desired_fps(normal_fps);
+            }
+        }
         last_crc_errors = snapshot.preprocess.crc_error_count;
         last_frame_jumps = snapshot.preprocess.frame_jump_count;
+        last_alive_errors = snapshot.preprocess.alive_error_count;
+        last_queue_drops = snapshot.media.queue_drop_count;
 
         if (i == 0 || i % 5 == 0) {
             std::cout << "[Safety] state=" << safety_state_to_string(current_state)
@@ -99,7 +123,10 @@ int main(int argc, char** argv) {
                       << " preprocess=" << snapshot.preprocess.frame_count
                       << " npu=" << snapshot.npu.frame_count
                       << " crc_errors=" << snapshot.preprocess.crc_error_count
-                      << " frame_jumps=" << snapshot.preprocess.frame_jump_count << "\n";
+                      << " frame_jumps=" << snapshot.preprocess.frame_jump_count
+                      << " alive_errors=" << snapshot.preprocess.alive_error_count
+                      << " queue_drops=" << snapshot.media.queue_drop_count
+                      << " target_fps=" << status.desired_fps() << "\n";
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(period_ms));

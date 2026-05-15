@@ -61,3 +61,13 @@ void DummyRuntime::release() {
     initialized_ = false;
     has_input_ = false;
 }
+
+RuntimeMetadata DummyRuntime::metadata() const {
+    RuntimeMetadata m;
+    m.backend = "dummy";
+    m.model_path = config_.model_path;
+    m.sdk_style = "dummy-runtime";
+    m.inputs.push_back({"input0", {1, 320, 320, 3}, "float32", "NHWC", 0, 1.0F});
+    m.outputs.push_back({"objects", {1, 6}, "float32", "NCHW", 0, 1.0F});
+    return m;
+}

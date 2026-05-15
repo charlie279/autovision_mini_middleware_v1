@@ -17,6 +17,7 @@ struct RingHeader {
     std::uint64_t head = 0;
     std::uint64_t tail = 0;
     std::uint64_t count = 0;
+    std::uint64_t drop_count = 0;
     pthread_mutex_t mutex;
     pthread_cond_t not_empty;
     pthread_cond_t not_full;
@@ -30,6 +31,10 @@ public:
     bool create(const std::string& name, std::size_t elem_size, std::size_t capacity);
     bool open(const std::string& name, std::size_t elem_size, std::size_t capacity);
     bool push(const void* item, std::size_t elem_size);
+    bool try_push_drop_oldest(const void* item, std::size_t elem_size);
+    std::uint64_t depth() const;
+    std::uint64_t capacity() const;
+    std::uint64_t drop_count() const;
     bool pop(void* item, std::size_t elem_size, int timeout_ms = -1);
     void close();
 
@@ -37,6 +42,7 @@ private:
     bool map_common(const std::string& name, std::size_t elem_size,
                     std::size_t capacity, bool create_mode);
     std::uint8_t* data_base();
+    const std::uint8_t* data_base() const;
 
     int fd_ = -1;
     void* base_ = nullptr;

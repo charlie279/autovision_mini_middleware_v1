@@ -6,6 +6,7 @@
 
 #include "runtime_config.hpp"
 #include "runtime_output.hpp"
+#include "runtime_metadata.hpp"
 #include "tensor_meta.hpp"
 
 #include <cstddef>
@@ -16,5 +17,7 @@ public:
     virtual bool setInput(const TensorMeta& meta, const void* data, std::size_t size) = 0;
     virtual bool run(RuntimeOutput& output) = 0;
     virtual void release() = 0;
+    virtual RuntimeMetadata metadata() const { return RuntimeMetadata{}; }
+    virtual int last_error() const { return 0; }
     virtual ~InferenceRuntime() = default;
 };

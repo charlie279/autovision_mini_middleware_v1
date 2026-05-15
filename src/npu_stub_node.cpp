@@ -88,6 +88,9 @@ int main(int argc, char** argv) {
     }
 
     std::ofstream result_file("logs/npu_results.jsonl", std::ios::out | std::ios::trunc);
+    std::ofstream metadata_file("logs/runtime_metadata.json", std::ios::out | std::ios::trunc);
+    metadata_file << runtime->metadata().to_json() << "\n";
+    std::cout << "[RuntimeNode] metadata=" << runtime->metadata().to_json() << "\n";
     std::uint64_t consumed = 0;
     std::uint64_t latest_frame_id = 0;
 

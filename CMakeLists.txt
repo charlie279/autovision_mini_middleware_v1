@@ -15,6 +15,12 @@ add_library(avm_common
     src/latency_profiler.cpp
     src/image_preprocess.cpp
     src/frame_lease.cpp
+    src/record_replay.cpp
+    src/timestamp_sync.cpp
+    src/runtime_metadata.cpp
+    src/detection_result.cpp
+    src/fd_passing.cpp
+    src/system_tuning.cpp
     src/shared_status.cpp
     src/shm_frame_pool.cpp
     src/shm_ring_buffer.cpp
@@ -26,6 +32,7 @@ add_executable(media_node
     src/media_node.cpp
     src/file_adapter.cpp
     src/lidar_sim_adapter.cpp
+    src/udp_lidar_sim_adapter.cpp
     src/camera_adapter_v4l2.cpp
 )
 target_link_libraries(media_node avm_common)
@@ -40,6 +47,9 @@ add_executable(npu_stub_node
     src/runtime_factory.cpp
 )
 target_link_libraries(npu_stub_node avm_common)
+
+add_executable(algorithm_stub_node src/algorithm_stub_node.cpp)
+target_link_libraries(algorithm_stub_node avm_common)
 
 add_executable(safety_monitor src/safety_monitor.cpp)
 target_link_libraries(safety_monitor avm_common)

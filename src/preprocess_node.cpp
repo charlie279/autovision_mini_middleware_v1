@@ -51,6 +51,9 @@ const char* format_name(std::uint32_t format) {
     if (format == avm::kFormatYuyv) {
         return "YUYV";
     }
+    if (format == avm::kFormatNv12) {
+        return "NV12";
+    }
     return "UNKNOWN";
 }
 
@@ -74,6 +77,10 @@ int main(int argc, char** argv) {
     const int frames = std::stoi(arg_value(argc, argv, "--frames", "120"));
     const int save_every = std::stoi(arg_value(argc, argv, "--save-every", "60"));
     const std::string perf_log_path = arg_value(argc, argv, "--perf-log", "");
+    const std::string backend_name = arg_value(argc, argv, "--preprocess-backend", "cpu");
+    const avm::PreprocessBackend backend = (backend_name == "libyuv" || backend_name == "libyuv_compat")
+        ? avm::PreprocessBackend::LIBYUV_COMPAT
+        : avm::PreprocessBackend::CPU_FALLBACK;
     std::filesystem::create_directories("logs/preprocess");
 
     std::ofstream perf_log;
@@ -84,7 +91,7 @@ int main(int argc, char** argv) {
         }
         perf_log.open(perf_log_path, std::ios::out | std::ios::trunc);
         if (perf_log.is_open()) {
-            perf_log << "frame_id,input_format,input_bytes,stride_bytes,preprocess_ms,total_ms,crc_errors,frame_jumps\n";
+            perf_log << "frame_id,input_format,input_bytes,stride_bytes,preprocess_ms,total_ms,crc_errors,frame_jumps,alive_errors,backend\n";
         } else {
             std::cerr << "[preprocess_node] failed to open perf log: " << perf_log_path << "\n";
         }
@@ -117,22 +124,26 @@ int main(int argc, char** argv) {
     std::uint64_t processed = 0;
     std::uint64_t crc_errors = 0;
     std::uint64_t frame_jumps = 0;
+    std::uint64_t alive_errors = 0;
     std::uint64_t unsupported_format = 0;
     std::uint64_t last_frame_id = 0;
+    std::uint32_t last_alive_counter = 0;
 
     std::vector<std::uint8_t> raw_buffer;
     std::vector<float> tensor_payload(static_cast<std::size_t>(avm::kTensorWidth) * avm::kTensorHeight * avm::kTensorChannels);
     avm::ResizeIndexPlan rgb_plan;
     avm::ResizeIndexPlan yuyv_plan;
+    avm::ResizeIndexPlan nv12_plan;
     bool rgb_plan_valid = false;
     bool yuyv_plan_valid = false;
+    bool nv12_plan_valid = false;
 
     for (int i = 0; i < frames; ++i) {
         FrameMeta meta;
         if (!frame_ring.pop(&meta, sizeof(meta), 3000)) {
             std::cerr << "[preprocess_node] timeout waiting FrameMeta\n";
             status.update_node("preprocess", processed, last_frame_id,
-                               ErrorCode::HEARTBEAT_TIMEOUT, crc_errors, frame_jumps);
+                               ErrorCode::HEARTBEAT_TIMEOUT, crc_errors, frame_jumps, alive_errors);
             continue;
         }
 
@@ -162,7 +173,7 @@ int main(int argc, char** argv) {
         last_frame_id = meta.frame_id;
 
         if (meta.sensor_type != 0 && meta.sensor_type != 2) {
-            status.update_node("preprocess", processed, meta.frame_id, error_code, crc_errors, frame_jumps);
+            status.update_node("preprocess", processed, meta.frame_id, error_code, crc_errors, frame_jumps, alive_errors);
             continue;
         }
 
@@ -176,7 +187,8 @@ int main(int argc, char** argv) {
                                                        avm::kTensorWidth, avm::kTensorHeight);
                 rgb_plan_valid = true;
             }
-            avm::resize_rgb888_to_tensor_plan(raw_buffer.data(), rgb_plan, tensor_payload.data());
+            avm::preprocess_to_tensor(raw_buffer.data(), meta.format, meta.width, meta.height,
+                                      effective_stride, backend, rgb_plan, tensor_payload.data());
         } else if (meta.format == avm::kFormatYuyv) {
             const std::uint32_t effective_stride = stride == 0 ? meta.width * 2U : stride;
             if (!yuyv_plan_valid || yuyv_plan.src_width != meta.width ||
@@ -185,12 +197,23 @@ int main(int argc, char** argv) {
                                                         avm::kTensorWidth, avm::kTensorHeight);
                 yuyv_plan_valid = true;
             }
-            avm::resize_yuyv_to_tensor_plan(raw_buffer.data(), yuyv_plan, tensor_payload.data());
+            avm::preprocess_to_tensor(raw_buffer.data(), meta.format, meta.width, meta.height,
+                                      effective_stride, backend, yuyv_plan, tensor_payload.data());
+        } else if (meta.format == avm::kFormatNv12) {
+            const std::uint32_t effective_stride = stride == 0 ? meta.width : stride;
+            if (!nv12_plan_valid || nv12_plan.src_width != meta.width ||
+                nv12_plan.src_height != meta.height || nv12_plan.src_stride_bytes != effective_stride) {
+                nv12_plan = avm::make_resize_index_plan(meta.width, meta.height, effective_stride,
+                                                        avm::kTensorWidth, avm::kTensorHeight);
+                nv12_plan_valid = true;
+            }
+            avm::preprocess_to_tensor(raw_buffer.data(), meta.format, meta.width, meta.height,
+                                      effective_stride, backend, nv12_plan, tensor_payload.data());
         } else {
             ++unsupported_format;
             std::cerr << "[preprocess_node] unsupported format=" << meta.format
                       << " frame_id=" << meta.frame_id << "\n";
-            status.update_node("preprocess", processed, meta.frame_id, error_code, crc_errors, frame_jumps);
+            status.update_node("preprocess", processed, meta.frame_id, error_code, crc_errors, frame_jumps, alive_errors);
             continue;
         }
         const std::uint64_t t_pre_end = avm::now_ns();
@@ -218,7 +241,7 @@ int main(int argc, char** argv) {
         const double preprocess_ms = avm::ns_to_ms(t_pre_end - t_pre_start);
         const double total_ms = avm::ns_to_ms(avm::now_ns() - t0);
         profiler.add(total_ms);
-        status.update_node("preprocess", processed, meta.frame_id, error_code, crc_errors, frame_jumps);
+        status.update_node("preprocess", processed, meta.frame_id, error_code, crc_errors, frame_jumps, alive_errors);
 
         if (perf_log.is_open()) {
             perf_log << meta.frame_id << ','
@@ -228,7 +251,9 @@ int main(int argc, char** argv) {
                      << preprocess_ms << ','
                      << total_ms << ','
                      << crc_errors << ','
-                     << frame_jumps << '\n';
+                     << frame_jumps << ','
+                     << alive_errors << ','
+                     << avm::preprocess_backend_name(backend) << '\n';
         }
 
         if (save_every > 0 && meta.format == avm::kFormatRgb888 &&
@@ -245,13 +270,16 @@ int main(int argc, char** argv) {
                       << " preprocess=" << preprocess_ms << "ms"
                       << " total=" << total_ms << "ms"
                       << " mean=" << profiler.mean() << "ms"
-                      << " p95=" << profiler.percentile(95.0) << "ms\n";
+                      << " p95=" << profiler.percentile(95.0) << "ms"
+                      << " alive_errors=" << alive_errors
+                      << " backend=" << avm::preprocess_backend_name(backend) << "\n";
         }
     }
 
     std::cout << "[preprocess_node] finished processed=" << processed
               << " crc_errors=" << crc_errors
               << " frame_jumps=" << frame_jumps
+              << " alive_errors=" << alive_errors
               << " unsupported_format=" << unsupported_format << "\n";
     return 0;
 }

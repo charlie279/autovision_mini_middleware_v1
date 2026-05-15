@@ -18,7 +18,9 @@ enum class ErrorCode : std::uint32_t {
     FRAME_ID_JUMP = 1,
     CRC_ERROR = 2,
     HEARTBEAT_TIMEOUT = 3,
-    LATENCY_OVER_THRESHOLD = 4
+    LATENCY_OVER_THRESHOLD = 4,
+    ALIVE_COUNTER_ERROR = 5,
+    QUEUE_DROP = 6
 };
 
 inline const char* safety_state_to_string(SafetyState state) {

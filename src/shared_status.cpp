@@ -114,7 +114,9 @@ void SharedStatus::update_node(const std::string& node_name,
                                std::uint64_t latest_frame_id,
                                ErrorCode error_code,
                                std::uint64_t crc_errors,
-                               std::uint64_t frame_jumps) {
+                               std::uint64_t frame_jumps,
+                               std::uint64_t alive_errors,
+                               std::uint64_t queue_drops) {
     if (block_ == nullptr) {
         return;
     }
@@ -128,6 +130,8 @@ void SharedStatus::update_node(const std::string& node_name,
         node->error_code = static_cast<std::uint32_t>(error_code);
         node->crc_error_count = crc_errors;
         node->frame_jump_count = frame_jumps;
+        node->alive_error_count = alive_errors;
+        node->queue_drop_count = queue_drops;
     }
     pthread_mutex_unlock(&block_->mutex);
 }

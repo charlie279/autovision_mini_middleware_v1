@@ -17,6 +17,8 @@ struct NodeRuntimeStatus {
     std::uint64_t latest_frame_id = 0;
     std::uint64_t crc_error_count = 0;
     std::uint64_t frame_jump_count = 0;
+    std::uint64_t alive_error_count = 0;
+    std::uint64_t queue_drop_count = 0;
     std::uint32_t error_code = 0;
     std::uint32_t reserved = 0;
 };
@@ -46,7 +48,9 @@ public:
                      std::uint64_t latest_frame_id,
                      ErrorCode error_code = ErrorCode::OK,
                      std::uint64_t crc_errors = 0,
-                     std::uint64_t frame_jumps = 0);
+                     std::uint64_t frame_jumps = 0,
+                     std::uint64_t alive_errors = 0,
+                     std::uint64_t queue_drops = 0);
     void set_desired_fps(std::uint32_t fps);
     std::uint32_t desired_fps();
     void set_safety(SafetyState state, ErrorCode error_code, const std::string& text);

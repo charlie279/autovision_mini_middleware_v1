@@ -8,7 +8,9 @@
 #include "file_adapter.hpp"
 #include "frame_meta.hpp"
 #include "lidar_sim_adapter.hpp"
+#include "record_replay.hpp"
 #include "shared_status.hpp"
+#include "udp_lidar_sim_adapter.hpp"
 #include "shm_frame_pool.hpp"
 #include "shm_ring_buffer.hpp"
 
@@ -64,14 +66,23 @@ int main(int argc, char** argv) {
     const auto height = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--height", "480")));
     const auto camera_fps = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--fps", "30")));
     const std::string camera_output = arg_value(argc, argv, "--camera-output", "rgb");
+    const std::string replay_path = arg_value(argc, argv, "--replay", "logs/record.avmr");
+    const std::string record_path = arg_value(argc, argv, "--record", "");
+    const std::string drop_policy = arg_value(argc, argv, "--drop-policy", "block");
+    const auto udp_port = static_cast<std::uint16_t>(std::stoul(arg_value(argc, argv, "--udp-port", "2368")));
     const bool inject_bad_crc = has_flag(argc, argv, "--inject-bad-crc");
     const bool inject_frame_jump = has_flag(argc, argv, "--inject-frame-jump");
+    const bool inject_alive_jump = has_flag(argc, argv, "--inject-alive-jump");
 
     std::unique_ptr<SensorAdapter> adapter;
     if (source == "file") {
         adapter = std::make_unique<FileAdapter>(input, width, height, avm::kDefaultChannels);
     } else if (source == "lidar_sim") {
         adapter = std::make_unique<LidarSimAdapter>();
+    } else if (source == "udp_lidar") {
+        adapter = std::make_unique<UdpLidarSimAdapter>("0.0.0.0", udp_port);
+    } else if (source == "replay") {
+        adapter = std::make_unique<avm::FrameReplayAdapter>(replay_path);
     } else if (source == "camera") {
         const CameraOutputFormat output_format =
             (camera_output == "yuyv") ? CameraOutputFormat::YUYV : CameraOutputFormat::RGB888;
@@ -101,6 +112,11 @@ int main(int argc, char** argv) {
 
     std::uint32_t alive_counter = 0;
     std::uint64_t produced = 0;
+    avm::FrameRecorder recorder;
+    const bool record_enabled = !record_path.empty();
+    if (record_enabled && !recorder.open(record_path)) {
+        return 5;
+    }
     auto next_tick = std::chrono::steady_clock::now();
 
     for (int i = 0; i < frames; ++i) {
@@ -133,13 +149,23 @@ int main(int argc, char** argv) {
             meta.crc32 ^= 0x00FF00FFU;
         }
         meta.alive_counter = ++alive_counter;
+        if (inject_alive_jump && i == 30) {
+            meta.alive_counter += 2;
+            alive_counter = meta.alive_counter;
+        }
         meta.status = 0;
 
         if (!frame_pool.write(meta.buffer_index, sensor_frame.data.data(), sensor_frame.data.size())) {
             std::cerr << "[media_node] frame_pool.write failed\n";
             break;
         }
-        if (!frame_ring.push(&meta, sizeof(meta))) {
+        if (record_enabled) {
+            recorder.write(sensor_frame, meta.crc32);
+        }
+        const bool pushed = (drop_policy == "drop_oldest")
+            ? frame_ring.try_push_drop_oldest(&meta, sizeof(meta))
+            : frame_ring.push(&meta, sizeof(meta));
+        if (!pushed) {
             std::cerr << "[media_node] frame_ring.push failed\n";
             break;
         }
@@ -153,6 +179,9 @@ int main(int argc, char** argv) {
                       << " format=" << format_name(meta.format)
                       << " size=" << meta.data_size
                       << " stride=" << meta.stride_bytes
+                      << " alive=" << meta.alive_counter
+                      << " q_depth=" << frame_ring.depth() << "/" << frame_ring.capacity()
+                      << " drops=" << frame_ring.drop_count()
                       << " buffer_index=" << meta.buffer_index << "\n";
         }
 
@@ -167,7 +196,10 @@ int main(int argc, char** argv) {
     }
 
     adapter->stop();
-    status.update_node("media", produced, produced);
-    std::cout << "[media_node] finished produced=" << produced << "\n";
+    recorder.close();
+    status.update_node("media", produced, produced, ErrorCode::OK, 0, 0, 0, frame_ring.drop_count());
+    std::cout << "[media_node] finished produced=" << produced
+              << " queue_drops=" << frame_ring.drop_count()
+              << " recorded=" << (record_enabled ? recorder.count() : 0) << "\n";
     return 0;
 }

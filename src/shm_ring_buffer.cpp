@@ -94,6 +94,7 @@ bool ShmRingBuffer::map_common(const std::string& name,
         header_->head = 0;
         header_->tail = 0;
         header_->count = 0;
+        header_->drop_count = 0;
         header_->initialized = 1;
     }
 
@@ -102,6 +103,10 @@ bool ShmRingBuffer::map_common(const std::string& name,
 
 std::uint8_t* ShmRingBuffer::data_base() {
     return static_cast<std::uint8_t*>(base_) + sizeof(RingHeader);
+}
+
+const std::uint8_t* ShmRingBuffer::data_base() const {
+    return static_cast<const std::uint8_t*>(base_) + sizeof(RingHeader);
 }
 
 bool ShmRingBuffer::push(const void* item, std::size_t elem_size) {
@@ -122,6 +127,51 @@ bool ShmRingBuffer::push(const void* item, std::size_t elem_size) {
     pthread_cond_signal(&header_->not_empty);
     pthread_mutex_unlock(&header_->mutex);
     return true;
+}
+
+
+bool ShmRingBuffer::try_push_drop_oldest(const void* item, std::size_t elem_size) {
+    if (header_ == nullptr || item == nullptr || elem_size != elem_size_) {
+        return false;
+    }
+
+    pthread_mutex_lock(&header_->mutex);
+    if (header_->count == header_->capacity) {
+        ++header_->head;
+        --header_->count;
+        ++header_->drop_count;
+    }
+    const std::uint64_t index = header_->tail % header_->capacity;
+    std::memcpy(data_base() + index * elem_size_, item, elem_size_);
+    ++header_->tail;
+    ++header_->count;
+    pthread_cond_signal(&header_->not_empty);
+    pthread_mutex_unlock(&header_->mutex);
+    return true;
+}
+
+std::uint64_t ShmRingBuffer::depth() const {
+    if (header_ == nullptr) {
+        return 0;
+    }
+    pthread_mutex_lock(&header_->mutex);
+    const std::uint64_t value = header_->count;
+    pthread_mutex_unlock(&header_->mutex);
+    return value;
+}
+
+std::uint64_t ShmRingBuffer::capacity() const {
+    return capacity_;
+}
+
+std::uint64_t ShmRingBuffer::drop_count() const {
+    if (header_ == nullptr) {
+        return 0;
+    }
+    pthread_mutex_lock(&header_->mutex);
+    const std::uint64_t value = header_->drop_count;
+    pthread_mutex_unlock(&header_->mutex);
+    return value;
 }
 
 bool ShmRingBuffer::pop(void* item, std::size_t elem_size, int timeout_ms) {

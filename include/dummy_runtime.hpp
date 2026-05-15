@@ -16,6 +16,7 @@ public:
     bool setInput(const TensorMeta& meta, const void* data, std::size_t size) override;
     bool run(RuntimeOutput& output) override;
     void release() override;
+    RuntimeMetadata metadata() const override;
 
 private:
     RuntimeConfig config_;

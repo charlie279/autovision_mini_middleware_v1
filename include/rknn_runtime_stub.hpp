@@ -12,10 +12,13 @@ public:
     bool setInput(const TensorMeta& meta, const void* data, std::size_t size) override;
     bool run(RuntimeOutput& output) override;
     void release() override;
+    RuntimeMetadata metadata() const override;
+    int last_error() const override { return last_error_; }
 
 private:
     RuntimeConfig config_;
     TensorMeta latest_input_{};
     bool initialized_ = false;
     bool has_input_ = false;
+    int last_error_ = 0;
 };
