@@ -7,6 +7,7 @@ WIDTH="${3:-640}"
 HEIGHT="${4:-480}"
 FPS="${5:-30}"
 BACKEND="${6:-dummy}"
+CAMERA_OUTPUT="${7:-rgb}"   # rgb | yuyv
 
 mkdir -p logs logs/preprocess logs/frames
 
@@ -23,7 +24,7 @@ PID_NPU=$!
 
 sleep 0.5
 
-./build/media_node --source camera --device "$DEV" --width "$WIDTH" --height "$HEIGHT" --fps "$FPS" --frames "$FRAMES" \
+./build/media_node --source camera --device "$DEV" --width "$WIDTH" --height "$HEIGHT" --fps "$FPS" --frames "$FRAMES" --camera-output "$CAMERA_OUTPUT" \
   > logs/media_camera.log 2>&1 &
 PID_MEDIA=$!
 
@@ -42,4 +43,4 @@ sleep 1
 
 kill "$PID_SAFE" "$PID_CTRL" 2>/dev/null || true
 
-echo "[run_camera_pipeline] done. Check logs/final_status_camera.txt and logs/*_camera.log"
+echo "[run_camera_pipeline] done. camera_output=$CAMERA_OUTPUT. Check logs/final_status_camera.txt and logs/*_camera.log"
