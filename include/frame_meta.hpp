@@ -14,6 +14,7 @@ struct FrameMeta {
     std::uint32_t height = 0;
     std::uint32_t format = 0;
     std::uint32_t data_size = 0;
+    std::uint32_t stride_bytes = 0;
     std::uint32_t buffer_index = 0;
     std::uint32_t crc32 = 0;
     std::uint32_t alive_counter = 0;

@@ -15,5 +15,6 @@ struct SensorFrame {
     std::uint32_t height = 0;
     std::uint32_t format = 0;
     std::uint32_t data_size = 0;
+    std::uint32_t stride_bytes = 0;  // bytes per row for image-like payload; 0 means tightly packed/unknown
     std::vector<std::uint8_t> data;
 };

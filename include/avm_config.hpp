@@ -33,6 +33,7 @@ constexpr std::size_t kTensorBufferSize = kTensorWidth * kTensorHeight * kTensor
 constexpr std::size_t kRingCapacity = 64;
 
 constexpr std::uint32_t kFormatRgb888 = 0x52474238U;       // 'RGB8'
+constexpr std::uint32_t kFormatYuyv = 0x59555956U;         // 'YUYV'
 constexpr std::uint32_t kFormatLidarFloat32 = 0x4C493332U; // 'LI32'
 
 }  // namespace avm
