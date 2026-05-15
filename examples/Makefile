@@ -25,7 +25,9 @@ EXAMPLES := \
 	09_sensor_to_shm \
 	10_control_query \
 	11_camera_adapter_v4l2 \
-	12_yuyv_fused_preprocess
+	12_yuyv_fused_preprocess \
+	13_preprocess_benchmark_compare \
+	14_frame_lease_pool
 
 SRCS_00_crc32 := \
 	$(CPP_DIR)/00_crc32.cpp \
@@ -76,6 +78,15 @@ SRCS_12_yuyv_fused_preprocess := \
 	$(CPP_DIR)/12_yuyv_fused_preprocess.cpp \
 	../src/image_preprocess.cpp \
 	../src/latency_profiler.cpp
+
+SRCS_13_preprocess_benchmark_compare := \
+	$(CPP_DIR)/13_preprocess_benchmark_compare.cpp \
+	../src/image_preprocess.cpp \
+	../src/latency_profiler.cpp
+
+SRCS_14_frame_lease_pool := \
+	$(CPP_DIR)/14_frame_lease_pool.cpp \
+	../src/frame_lease.cpp
 
 PIPELINE_SRCS_PRODUCER := \
 	$(CPP_DIR)/08_frame_producer.cpp \
@@ -142,6 +153,12 @@ $(BIN_DIR)/11_camera_adapter_v4l2: $(SRCS_11_camera_adapter_v4l2) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(BIN_DIR)/12_yuyv_fused_preprocess: $(SRCS_12_yuyv_fused_preprocess) | dirs
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(BIN_DIR)/13_preprocess_benchmark_compare: $(SRCS_13_preprocess_benchmark_compare) | dirs
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(BIN_DIR)/14_frame_lease_pool: $(SRCS_14_frame_lease_pool) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 frame_ipc: dirs

@@ -1,41 +1,55 @@
-# AutoVision Mini Middleware V1
+# AutoVision Mini Middleware V1.8 VM Performance Optimization
 
-Ubuntu 22.04 / VMware 上的车载视觉中间件最小闭环 Demo。
+AutoVision Mini Middleware is a minimal C++17/Linux vision-middleware learning project for autonomous-driving middleware roles.
 
-本版本只依赖 C++17、CMake、POSIX SHM、pthread 和 Python3 生成测试输入，不依赖 OpenCV。目标是先跑通：
+V1.8 consolidates V1.6 YUYV raw + fused preprocess and V1.7 benchmark visualization, then adds three VMware-friendly optimization points:
 
-```text
-FileAdapter / LidarSimAdapter
-        -> media_node
-        -> POSIX SHM FramePool
-        -> FrameMeta Ring
-        -> preprocess_node
-        -> TensorMeta Ring
-        -> npu_stub_node
-        -> safety_monitor + control_service
-```
+1. **Preprocess operator deep optimization**: RGB/YUYV resize index plan to remove per-pixel coordinate division from the hot loop.
+2. **Frame buffer lifecycle simulation**: `FrameLeasePool` models acquire/publish/ref-count/release/timeout-reclaim semantics for later DMA-BUF/fd-passing work.
+3. **Performance observability**: CSV/HTML benchmark logs, optional GStreamer camera baseline, optional `perf stat` profiling.
 
-## Quick Start
+## Build
 
 ```bash
-sudo apt update
-sudo apt install -y build-essential cmake git python3 tree htop
 chmod +x scripts/*.sh
 ./scripts/build.sh
-./scripts/run_all_vm.sh
-./build/control_client QUERY_STATUS
-./scripts/collect_report.sh
 ```
 
-## 异常注入
+## File-input regression
 
 ```bash
-./scripts/inject_fault.sh bad_crc
-./scripts/inject_fault.sh frame_jump
+./scripts/prepare_input.sh
+./scripts/run_all_vm.sh
+cat logs/final_status.txt
 ```
 
-## V1 边界
+Expected:
 
-- POSIX SHM 路径是 Ubuntu/x86_64 学习版，不是真正 DMA zero-copy。
-- CameraAdapterV4L2 在 V1 中为占位实现；第二阶段开发板再实现真实 V4L2 ioctl + mmap。
-- Safety Monitor 是 watchdog / E2E protection 学习版，不是 ISO 26262 / ASIL 级实现。
+```text
+status=NORMAL fps=30 media_frames=120 preprocess_frames=120 npu_frames=120 error_code=0 text="NORMAL"
+```
+
+## Synthetic benchmark
+
+```bash
+./scripts/benchmark_v1_8_vm_perf_opt.sh 120
+```
+
+Generated outputs:
+
+```text
+logs/benchmark/v1_8_preprocess_compare_summary.csv
+logs/benchmark/v1_8_preprocess_compare.html
+logs/benchmark/v1_8_frame_lease_pool.csv
+```
+
+## Real USB camera verification on VMware Ubuntu
+
+```bash
+./scripts/check_usb_camera_v1_5.sh /dev/video0
+./scripts/run_camera_pipeline.sh /dev/video0 300 640 480 30 dummy rgb
+./scripts/run_camera_pipeline_yuyv_fused.sh /dev/video0 300 640 480 30 dummy
+./scripts/benchmark_v1_7_camera_compare.sh /dev/video0 900 640 480 30 dummy
+```
+
+This repository still uses POSIX SHM + memcpy. It does not claim DMA-BUF zero-copy, real RKNN inference, or ISO 26262 compliance.

@@ -5,10 +5,6 @@
 #
 # 使用方法：
 #   ./scripts/format.sh
-#
-# 格式化范围：
-#   include/*.hpp
-#   src/*.cpp
 
 set -euo pipefail
 
@@ -18,6 +14,6 @@ if ! command -v clang-format >/dev/null 2>&1; then
     exit 1
 fi
 
-find include src \( -name '*.hpp' -o -name '*.cpp' \) -print0 | xargs -0 clang-format -i
+find include src examples/cpp \( -name '*.hpp' -o -name '*.cpp' \) -print0 | xargs -0 clang-format -i
 
 echo "[format] done"

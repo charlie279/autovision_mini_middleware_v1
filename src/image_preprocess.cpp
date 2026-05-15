@@ -24,6 +24,36 @@ inline void yuv_to_rgb(int y, int u, int v, std::uint8_t& r, std::uint8_t& g, st
 }
 }  // namespace
 
+ResizeIndexPlan make_resize_index_plan(std::uint32_t src_width,
+                                        std::uint32_t src_height,
+                                        std::uint32_t src_stride_bytes,
+                                        std::uint32_t dst_width,
+                                        std::uint32_t dst_height) {
+    ResizeIndexPlan plan;
+    plan.src_width = src_width;
+    plan.src_height = src_height;
+    plan.src_stride_bytes = src_stride_bytes;
+    plan.dst_width = dst_width;
+    plan.dst_height = dst_height;
+    plan.row_offsets.resize(dst_height);
+    plan.rgb_x_offsets.resize(dst_width);
+    plan.yuyv_pair_offsets.resize(dst_width);
+    plan.yuyv_select_y1.resize(dst_width);
+
+    for (std::uint32_t y = 0; y < dst_height; ++y) {
+        const std::uint32_t src_y = y * src_height / dst_height;
+        plan.row_offsets[y] = src_y * src_stride_bytes;
+    }
+    for (std::uint32_t x = 0; x < dst_width; ++x) {
+        const std::uint32_t src_x = x * src_width / dst_width;
+        const std::uint32_t pair_x = src_x & ~1U;
+        plan.rgb_x_offsets[x] = src_x * 3U;
+        plan.yuyv_pair_offsets[x] = pair_x * 2U;
+        plan.yuyv_select_y1[x] = static_cast<std::uint8_t>(src_x & 1U);
+    }
+    return plan;
+}
+
 void resize_rgb888_to_tensor(const std::uint8_t* rgb,
                              std::uint32_t src_width,
                              std::uint32_t src_height,
@@ -80,6 +110,45 @@ void resize_yuyv_to_tensor(const std::uint8_t* yuyv,
             yuv_to_rgb(yy, u, v, r, g, b);
 
             const std::size_t dst_idx = (static_cast<std::size_t>(y) * dst_width + x) * 3U;
+            tensor[dst_idx + 0] = static_cast<float>(r) / 255.0F;
+            tensor[dst_idx + 1] = static_cast<float>(g) / 255.0F;
+            tensor[dst_idx + 2] = static_cast<float>(b) / 255.0F;
+        }
+    }
+}
+
+void resize_rgb888_to_tensor_plan(const std::uint8_t* rgb,
+                                  const ResizeIndexPlan& plan,
+                                  float* tensor) {
+    for (std::uint32_t y = 0; y < plan.dst_height; ++y) {
+        const auto* base = rgb + plan.row_offsets[y];
+        for (std::uint32_t x = 0; x < plan.dst_width; ++x) {
+            const std::uint32_t src_idx = plan.rgb_x_offsets[x];
+            const std::size_t dst_idx = (static_cast<std::size_t>(y) * plan.dst_width + x) * 3U;
+            tensor[dst_idx + 0] = static_cast<float>(base[src_idx + 0]) / 255.0F;
+            tensor[dst_idx + 1] = static_cast<float>(base[src_idx + 1]) / 255.0F;
+            tensor[dst_idx + 2] = static_cast<float>(base[src_idx + 2]) / 255.0F;
+        }
+    }
+}
+
+void resize_yuyv_to_tensor_plan(const std::uint8_t* yuyv,
+                                const ResizeIndexPlan& plan,
+                                float* tensor) {
+    for (std::uint32_t y = 0; y < plan.dst_height; ++y) {
+        const auto* base = yuyv + plan.row_offsets[y];
+        for (std::uint32_t x = 0; x < plan.dst_width; ++x) {
+            const auto* px = base + plan.yuyv_pair_offsets[x];
+            const int yy = plan.yuyv_select_y1[x] ? px[2] : px[0];
+            const int u = px[1];
+            const int v = px[3];
+
+            std::uint8_t r = 0;
+            std::uint8_t g = 0;
+            std::uint8_t b = 0;
+            yuv_to_rgb(yy, u, v, r, g, b);
+
+            const std::size_t dst_idx = (static_cast<std::size_t>(y) * plan.dst_width + x) * 3U;
             tensor[dst_idx + 0] = static_cast<float>(r) / 255.0F;
             tensor[dst_idx + 1] = static_cast<float>(g) / 255.0F;
             tensor[dst_idx + 2] = static_cast<float>(b) / 255.0F;

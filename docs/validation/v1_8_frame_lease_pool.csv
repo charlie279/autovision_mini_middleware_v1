@@ -1,0 +1,8 @@
+step,index,frame_id,state,ref_count,free_count,busy_count
+acquire_a,0,1,WRITING,0,0,3
+acquire_b,1,2,WRITING,0,0,3
+acquire_c,2,3,WRITING,0,0,3
+publish_a,0,1,PUBLISHED,2,0,3
+release_a_once,0,1,PUBLISHED,1,0,3
+release_a_twice,0,0,FREE,0,1,2
+publish_d,0,4,PUBLISHED,1,0,3

@@ -7,5 +7,6 @@ WIDTH="${3:-640}"
 HEIGHT="${4:-480}"
 FPS="${5:-30}"
 BACKEND="${6:-dummy}"
+PERF_LOG="${7:-logs/benchmark/camera_yuyv_fused_perf.csv}"
 
-./scripts/run_camera_pipeline.sh "$DEV" "$FRAMES" "$WIDTH" "$HEIGHT" "$FPS" "$BACKEND" yuyv
+./scripts/run_camera_pipeline.sh "$DEV" "$FRAMES" "$WIDTH" "$HEIGHT" "$FPS" "$BACKEND" yuyv "$PERF_LOG"

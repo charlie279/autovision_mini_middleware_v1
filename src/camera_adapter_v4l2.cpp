@@ -1,6 +1,6 @@
 /**
  * @file camera_adapter_v4l2.cpp
- * @brief V4L2 USB UVC 摄像头适配器实现：YUYV mmap 采集，可输出 YUYV raw 或 RGB888 SensorFrame。
+ * @brief V4L2 USB UVC 摄像头适配器实现：YUYV mmap 采集，可输出 RGB888 或紧凑 YUYV raw SensorFrame。
  */
 #include "camera_adapter_v4l2.hpp"
 
@@ -312,35 +312,39 @@ bool CameraAdapterV4L2::readFrame(SensorFrame& frame) {
         return false;
     }
 
+    const auto* src_yuyv = static_cast<const std::uint8_t*>(buffers_[index].start);
+    std::vector<std::uint8_t> payload;
+    std::uint32_t output_format = avm::kFormatRgb888;
+    std::uint32_t output_stride = width_ * 3U;
+
+    if (output_format_ == CameraOutputFormat::YUYV) {
+        payload.resize(static_cast<std::size_t>(width_) * height_ * 2U);
+        copy_yuyv_compact(src_yuyv, payload.data(), width_, height_, bytes_per_line_);
+        output_format = avm::kFormatYuyv;
+        output_stride = width_ * 2U;
+    } else {
+        payload.resize(static_cast<std::size_t>(width_) * height_ * 3U);
+        yuyv_to_rgb888(src_yuyv, payload.data(), width_, height_, bytes_per_line_);
+        output_format = avm::kFormatRgb888;
+        output_stride = width_ * 3U;
+    }
+
     frame.frame_id = next_frame_id_++;
     frame.timestamp_ns = avm::now_ns();
     frame.sensor_type = 0;
     frame.width = width_;
     frame.height = height_;
-
-    if (output_format_ == CameraOutputFormat::YUYV) {
-        std::vector<std::uint8_t> yuyv(static_cast<std::size_t>(width_) * height_ * 2U);
-        copy_yuyv_compact(static_cast<const std::uint8_t*>(buffers_[index].start),
-                          yuyv.data(), width_, height_, bytes_per_line_);
-        frame.format = avm::kFormatYuyv;
-        frame.stride_bytes = width_ * 2U;
-        frame.data_size = static_cast<std::uint32_t>(yuyv.size());
-        frame.data = std::move(yuyv);
-    } else {
-        std::vector<std::uint8_t> rgb(static_cast<std::size_t>(width_) * height_ * 3U);
-        yuyv_to_rgb888(static_cast<const std::uint8_t*>(buffers_[index].start),
-                       rgb.data(), width_, height_, bytes_per_line_);
-        frame.format = avm::kFormatRgb888;
-        frame.stride_bytes = width_ * 3U;
-        frame.data_size = static_cast<std::uint32_t>(rgb.size());
-        frame.data = std::move(rgb);
-    }
+    frame.format = output_format;
+    frame.data_size = static_cast<std::uint32_t>(payload.size());
+    frame.stride_bytes = output_stride;
+    frame.data = std::move(payload);
 
     if (frame.frame_id == 1 || frame.frame_id % 30 == 0) {
         std::cout << "[CameraAdapterV4L2] frame_id=" << frame.frame_id
                   << " bytesused=" << bytes_used
                   << " output_format=" << (output_format_ == CameraOutputFormat::YUYV ? "YUYV" : "RGB888")
-                  << " payload_size=" << frame.data_size << "\n";
+                  << " output_size=" << frame.data_size
+                  << " stride=" << frame.stride_bytes << "\n";
     }
 
     if (!requeue_buffer(index)) {
@@ -377,19 +381,6 @@ std::uint8_t CameraAdapterV4L2::clamp_to_u8(int value) {
     return static_cast<std::uint8_t>(std::max(0, std::min(255, value)));
 }
 
-void CameraAdapterV4L2::copy_yuyv_compact(const std::uint8_t* yuyv,
-                                          std::uint8_t* compact,
-                                          std::uint32_t width,
-                                          std::uint32_t height,
-                                          std::uint32_t bytes_per_line) {
-    const std::uint32_t compact_stride = width * 2U;
-    for (std::uint32_t y = 0; y < height; ++y) {
-        const std::uint8_t* src = yuyv + static_cast<std::size_t>(y) * bytes_per_line;
-        std::uint8_t* dst = compact + static_cast<std::size_t>(y) * compact_stride;
-        std::memcpy(dst, src, compact_stride);
-    }
-}
-
 void CameraAdapterV4L2::yuyv_to_rgb888(const std::uint8_t* yuyv,
                                        std::uint8_t* rgb,
                                        std::uint32_t width,
@@ -420,5 +411,17 @@ void CameraAdapterV4L2::yuyv_to_rgb888(const std::uint8_t* yuyv,
             src += 4;
             dst += 6;
         }
+    }
+}
+void CameraAdapterV4L2::copy_yuyv_compact(const std::uint8_t* yuyv,
+                                           std::uint8_t* compact,
+                                           std::uint32_t width,
+                                           std::uint32_t height,
+                                           std::uint32_t bytes_per_line) {
+    const std::uint32_t compact_stride = width * 2U;
+    for (std::uint32_t y = 0; y < height; ++y) {
+        const auto* src = yuyv + static_cast<std::size_t>(y) * bytes_per_line;
+        auto* dst = compact + static_cast<std::size_t>(y) * compact_stride;
+        std::memcpy(dst, src, compact_stride);
     }
 }

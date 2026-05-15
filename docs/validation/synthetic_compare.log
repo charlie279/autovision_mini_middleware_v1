@@ -1,0 +1,4 @@
+[13_preprocess_benchmark_compare] loops=20
+[13_preprocess_benchmark_compare] rgb_input_bytes=921600 rgb_mean_ms=0.390315 rgb_p95_ms=0.407858
+[13_preprocess_benchmark_compare] yuyv_input_bytes=614400 yuyv_mean_ms=0.919661 yuyv_p95_ms=0.978121
+[13_preprocess_benchmark_compare] csv=examples/logs/preprocess_benchmark_compare.csv

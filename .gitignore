@@ -1,11 +1,11 @@
 build/
-assets/input_*.rgb
+assets/
 logs/
+examples/bin/
+examples/logs/
+docs/performance_report.md
 compile_commands.json
 .vscode/
 *.o
 *.a
 *.so
-assets/
-examples/bin/
-examples/logs/

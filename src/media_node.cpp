@@ -37,6 +37,19 @@ bool has_flag(int argc, char** argv, const std::string& key) {
     }
     return false;
 }
+
+const char* format_name(std::uint32_t format) {
+    if (format == avm::kFormatRgb888) {
+        return "RGB888";
+    }
+    if (format == avm::kFormatYuyv) {
+        return "YUYV";
+    }
+    if (format == avm::kFormatLidarFloat32) {
+        return "LI32";
+    }
+    return "UNKNOWN";
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -137,7 +150,9 @@ int main(int argc, char** argv) {
         if (produced == 1 || produced % 30 == 0) {
             std::cout << "[media_node] frame_id=" << meta.frame_id
                       << " sensor_type=" << meta.sensor_type
+                      << " format=" << format_name(meta.format)
                       << " size=" << meta.data_size
+                      << " stride=" << meta.stride_bytes
                       << " buffer_index=" << meta.buffer_index << "\n";
         }
 

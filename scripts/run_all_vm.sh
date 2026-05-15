@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-mkdir -p logs logs/preprocess logs/frames
+mkdir -p logs logs/preprocess logs/frames logs/benchmark
 
 ./scripts/clean_ipc.sh || true
 ./scripts/prepare_input.sh
@@ -9,28 +9,23 @@ mkdir -p logs logs/preprocess logs/frames
 ./build/control_service > logs/control_service.log 2>&1 &
 PID_CTRL=$!
 
-# 先启动消费者。preprocess_node 会等待 media_node 创建 FramePool；
-# npu_stub_node 会等待 preprocess_node 创建 TensorMeta Ring。
-./build/preprocess_node --frames 120 --save-every 60 \
-    > logs/preprocess_node.log 2>&1 &
+# 先启动消费者节点，让它们等待生产者创建共享内存对象。
+# 这可以避免 media_node 先跑太久导致 FramePool 的 8 个槽位被覆盖。
+./build/preprocess_node --frames 120 --save-every 60 --perf-log logs/benchmark/file_rgb_perf.csv > logs/preprocess_node.log 2>&1 &
 PID_PRE=$!
 
-./build/npu_stub_node --frames 120 --fake-latency 8 \
-    > logs/npu_stub_node.log 2>&1 &
+./build/npu_stub_node --frames 120 --fake-latency 8 > logs/npu_stub_node.log 2>&1 &
 PID_NPU=$!
 
-# 给消费者一个很短的启动时间，但不能让生产者先跑太久。
 sleep 0.2
 
-# 再启动生产者，避免 FramePool 槽位在消费者未启动前被覆盖。
 ./build/media_node --source file --input assets/input_640x480_rgb.raw --frames 120 \
     > logs/media_node.log 2>&1 &
 PID_MEDIA=$!
 
-# 最后启动 safety_monitor，避免因节点尚未 heartbeat 而误报 timeout。
+# Safety Monitor 最后启动，避免在节点尚未 heartbeat 时误报 timeout。
 sleep 1
-./build/safety_monitor --duration 15 \
-    > logs/safety_monitor.log 2>&1 &
+./build/safety_monitor --duration 15 > logs/safety_monitor.log 2>&1 &
 PID_SAFE=$!
 
 wait "$PID_MEDIA" || true

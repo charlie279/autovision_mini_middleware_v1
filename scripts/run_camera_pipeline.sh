@@ -7,16 +7,21 @@ WIDTH="${3:-640}"
 HEIGHT="${4:-480}"
 FPS="${5:-30}"
 BACKEND="${6:-dummy}"
-CAMERA_OUTPUT="${7:-rgb}"   # rgb | yuyv
+CAMERA_OUTPUT="${7:-rgb}"
+PERF_LOG="${8:-}"
 
-mkdir -p logs logs/preprocess logs/frames
+mkdir -p logs logs/preprocess logs/frames logs/benchmark
 
 ./scripts/clean_ipc.sh || true
 
 ./build/control_service > logs/control_service_camera.log 2>&1 &
 PID_CTRL=$!
 
-./build/preprocess_node --frames "$FRAMES" --save-every 60 > logs/preprocess_camera.log 2>&1 &
+PRE_ARGS=(--frames "$FRAMES" --save-every 60)
+if [[ -n "$PERF_LOG" ]]; then
+  PRE_ARGS+=(--perf-log "$PERF_LOG")
+fi
+./build/preprocess_node "${PRE_ARGS[@]}" > logs/preprocess_camera.log 2>&1 &
 PID_PRE=$!
 
 ./build/npu_stub_node --frames "$FRAMES" --fake-latency 8 --backend "$BACKEND" > logs/npu_camera.log 2>&1 &
@@ -43,4 +48,4 @@ sleep 1
 
 kill "$PID_SAFE" "$PID_CTRL" 2>/dev/null || true
 
-echo "[run_camera_pipeline] done. camera_output=$CAMERA_OUTPUT. Check logs/final_status_camera.txt and logs/*_camera.log"
+echo "[run_camera_pipeline] done camera_output=$CAMERA_OUTPUT perf_log=${PERF_LOG:-none}. Check logs/final_status_camera.txt and logs/*_camera.log"
