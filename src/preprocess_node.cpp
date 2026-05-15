@@ -1,10 +1,11 @@
 /**
  * @file preprocess_node.cpp
- * @brief 前处理节点：读取 FrameMeta 和 payload，做 resize/normalize，输出 TensorMeta。
+ * @brief 前处理节点：读取 FrameMeta 和 payload，做 CRC、frame_id 检查、RGB/YUYV 前处理，输出 TensorMeta。
  */
 #include "avm_config.hpp"
 #include "crc32.hpp"
 #include "frame_meta.hpp"
+#include "image_preprocess.hpp"
 #include "latency_profiler.hpp"
 #include "shared_status.hpp"
 #include "shm_frame_pool.hpp"
@@ -12,7 +13,6 @@
 #include "tensor_meta.hpp"
 #include "time_utils.hpp"
 
-#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -42,26 +42,6 @@ bool retry_open(OpenFunc&& open_func, const char* name, int retry_count = 60) {
     }
     std::cerr << "[preprocess_node] failed to open " << name << "\n";
     return false;
-}
-
-std::vector<float> resize_rgb_to_tensor(const std::vector<std::uint8_t>& rgb,
-                                        std::uint32_t src_width,
-                                        std::uint32_t src_height,
-                                        std::uint32_t dst_width,
-                                        std::uint32_t dst_height) {
-    std::vector<float> tensor(static_cast<std::size_t>(dst_width) * dst_height * 3);
-    for (std::uint32_t y = 0; y < dst_height; ++y) {
-        const std::uint32_t src_y = y * src_height / dst_height;
-        for (std::uint32_t x = 0; x < dst_width; ++x) {
-            const std::uint32_t src_x = x * src_width / dst_width;
-            const std::size_t src_idx = (static_cast<std::size_t>(src_y) * src_width + src_x) * 3;
-            const std::size_t dst_idx = (static_cast<std::size_t>(y) * dst_width + x) * 3;
-            tensor[dst_idx + 0] = static_cast<float>(rgb[src_idx + 0]) / 255.0F;
-            tensor[dst_idx + 1] = static_cast<float>(rgb[src_idx + 1]) / 255.0F;
-            tensor[dst_idx + 2] = static_cast<float>(rgb[src_idx + 2]) / 255.0F;
-        }
-    }
-    return tensor;
 }
 
 void save_ppm_preview(const std::vector<std::uint8_t>& rgb,
@@ -112,7 +92,11 @@ int main(int argc, char** argv) {
     std::uint64_t processed = 0;
     std::uint64_t crc_errors = 0;
     std::uint64_t frame_jumps = 0;
+    std::uint64_t unsupported_format = 0;
     std::uint64_t last_frame_id = 0;
+
+    std::vector<std::uint8_t> raw_buffer;
+    std::vector<float> tensor_payload(static_cast<std::size_t>(avm::kTensorWidth) * avm::kTensorHeight * avm::kTensorChannels);
 
     for (int i = 0; i < frames; ++i) {
         FrameMeta meta;
@@ -124,13 +108,15 @@ int main(int argc, char** argv) {
         }
 
         const std::uint64_t t0 = avm::now_ns();
-        std::vector<std::uint8_t> raw(meta.data_size);
-        if (!frame_pool.read(meta.buffer_index, raw.data(), raw.size())) {
+        if (raw_buffer.size() < meta.data_size) {
+            raw_buffer.resize(meta.data_size);
+        }
+        if (!frame_pool.read(meta.buffer_index, raw_buffer.data(), meta.data_size)) {
             std::cerr << "[preprocess_node] frame_pool.read failed\n";
             continue;
         }
 
-        const std::uint32_t actual_crc = crc32_compute(raw.data(), raw.size());
+        const std::uint32_t actual_crc = crc32_compute(raw_buffer.data(), meta.data_size);
         ErrorCode error_code = ErrorCode::OK;
         if (actual_crc != meta.crc32) {
             ++crc_errors;
@@ -151,10 +137,26 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        const std::uint64_t t_resize_start = avm::now_ns();
-        std::vector<float> tensor_payload = resize_rgb_to_tensor(
-            raw, meta.width, meta.height, avm::kTensorWidth, avm::kTensorHeight);
-        const std::uint64_t t_resize_end = avm::now_ns();
+        const std::uint64_t t_pre_start = avm::now_ns();
+        const std::uint32_t stride = meta.stride_bytes;
+        if (meta.format == avm::kFormatRgb888) {
+            avm::resize_rgb888_to_tensor(raw_buffer.data(), meta.width, meta.height,
+                                         stride == 0 ? meta.width * 3U : stride,
+                                         avm::kTensorWidth, avm::kTensorHeight,
+                                         tensor_payload.data());
+        } else if (meta.format == avm::kFormatYuyv) {
+            avm::resize_yuyv_to_tensor(raw_buffer.data(), meta.width, meta.height,
+                                       stride == 0 ? meta.width * 2U : stride,
+                                       avm::kTensorWidth, avm::kTensorHeight,
+                                       tensor_payload.data());
+        } else {
+            ++unsupported_format;
+            std::cerr << "[preprocess_node] unsupported format=" << meta.format
+                      << " frame_id=" << meta.frame_id << "\n";
+            status.update_node("preprocess", processed, meta.frame_id, error_code, crc_errors, frame_jumps);
+            continue;
+        }
+        const std::uint64_t t_pre_end = avm::now_ns();
 
         TensorMeta tensor;
         tensor.frame_id = meta.frame_id;
@@ -180,14 +182,17 @@ int main(int argc, char** argv) {
         profiler.add(total_ms);
         status.update_node("preprocess", processed, meta.frame_id, error_code, crc_errors, frame_jumps);
 
-        if (save_every > 0 && processed % static_cast<std::uint64_t>(save_every) == 0) {
-            save_ppm_preview(raw, meta.width, meta.height,
+        if (save_every > 0 && meta.format == avm::kFormatRgb888 &&
+            processed % static_cast<std::uint64_t>(save_every) == 0) {
+            std::vector<std::uint8_t> preview(raw_buffer.begin(), raw_buffer.begin() + meta.data_size);
+            save_ppm_preview(preview, meta.width, meta.height,
                              "logs/preprocess/frame_" + std::to_string(processed) + ".ppm");
         }
 
         if (processed == 1 || processed % 30 == 0) {
             std::cout << "[Preprocess] frame_id=" << meta.frame_id
-                      << " resize+normalize=" << avm::ns_to_ms(t_resize_end - t_resize_start) << "ms"
+                      << " input_format=" << (meta.format == avm::kFormatYuyv ? "YUYV" : "RGB888")
+                      << " preprocess=" << avm::ns_to_ms(t_pre_end - t_pre_start) << "ms"
                       << " total=" << total_ms << "ms"
                       << " mean=" << profiler.mean() << "ms"
                       << " p95=" << profiler.percentile(95.0) << "ms\n";
@@ -196,6 +201,7 @@ int main(int argc, char** argv) {
 
     std::cout << "[preprocess_node] finished processed=" << processed
               << " crc_errors=" << crc_errors
-              << " frame_jumps=" << frame_jumps << "\n";
+              << " frame_jumps=" << frame_jumps
+              << " unsupported_format=" << unsupported_format << "\n";
     return 0;
 }

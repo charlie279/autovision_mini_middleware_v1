@@ -13,6 +13,7 @@ include_directories(include)
 add_library(avm_common
     src/crc32.cpp
     src/latency_profiler.cpp
+    src/image_preprocess.cpp
     src/shared_status.cpp
     src/shm_frame_pool.cpp
     src/shm_ring_buffer.cpp

@@ -1,0 +1,90 @@
+/**
+ * @file image_preprocess.cpp
+ * @brief CPU fallback preprocess implementation: RGB888 resize/normalize and fused YUYV->RGB resize/normalize.
+ */
+#include "image_preprocess.hpp"
+
+#include <algorithm>
+#include <cstddef>
+
+namespace avm {
+
+std::uint8_t clamp_to_u8(int value) {
+    return static_cast<std::uint8_t>(std::max(0, std::min(255, value)));
+}
+
+namespace {
+inline void yuv_to_rgb(int y, int u, int v, std::uint8_t& r, std::uint8_t& g, std::uint8_t& b) {
+    const int c = y - 16;
+    const int d = u - 128;
+    const int e = v - 128;
+    r = clamp_to_u8((298 * c + 409 * e + 128) >> 8);
+    g = clamp_to_u8((298 * c - 100 * d - 208 * e + 128) >> 8);
+    b = clamp_to_u8((298 * c + 516 * d + 128) >> 8);
+}
+}  // namespace
+
+void resize_rgb888_to_tensor(const std::uint8_t* rgb,
+                             std::uint32_t src_width,
+                             std::uint32_t src_height,
+                             std::uint32_t src_stride_bytes,
+                             std::uint32_t dst_width,
+                             std::uint32_t dst_height,
+                             float* tensor) {
+    if (src_stride_bytes == 0) {
+        src_stride_bytes = src_width * 3U;
+    }
+
+    for (std::uint32_t y = 0; y < dst_height; ++y) {
+        const std::uint32_t src_y = y * src_height / dst_height;
+        const auto* src_row = rgb + static_cast<std::size_t>(src_y) * src_stride_bytes;
+        for (std::uint32_t x = 0; x < dst_width; ++x) {
+            const std::uint32_t src_x = x * src_width / dst_width;
+            const std::size_t src_idx = static_cast<std::size_t>(src_x) * 3U;
+            const std::size_t dst_idx = (static_cast<std::size_t>(y) * dst_width + x) * 3U;
+            tensor[dst_idx + 0] = static_cast<float>(src_row[src_idx + 0]) / 255.0F;
+            tensor[dst_idx + 1] = static_cast<float>(src_row[src_idx + 1]) / 255.0F;
+            tensor[dst_idx + 2] = static_cast<float>(src_row[src_idx + 2]) / 255.0F;
+        }
+    }
+}
+
+void resize_yuyv_to_tensor(const std::uint8_t* yuyv,
+                           std::uint32_t src_width,
+                           std::uint32_t src_height,
+                           std::uint32_t src_stride_bytes,
+                           std::uint32_t dst_width,
+                           std::uint32_t dst_height,
+                           float* tensor) {
+    if (src_stride_bytes == 0) {
+        src_stride_bytes = src_width * 2U;
+    }
+
+    for (std::uint32_t y = 0; y < dst_height; ++y) {
+        const std::uint32_t src_y = y * src_height / dst_height;
+        const auto* src_row = yuyv + static_cast<std::size_t>(src_y) * src_stride_bytes;
+        for (std::uint32_t x = 0; x < dst_width; ++x) {
+            const std::uint32_t src_x = x * src_width / dst_width;
+            const std::uint32_t pair_x = src_x & ~1U;
+            const auto* px = src_row + static_cast<std::size_t>(pair_x) * 2U;
+
+            const int y0 = px[0];
+            const int u = px[1];
+            const int y1 = px[2];
+            const int v = px[3];
+            const int yy = (src_x & 1U) ? y1 : y0;
+
+            std::uint8_t r = 0;
+            std::uint8_t g = 0;
+            std::uint8_t b = 0;
+            yuv_to_rgb(yy, u, v, r, g, b);
+
+            const std::size_t dst_idx = (static_cast<std::size_t>(y) * dst_width + x) * 3U;
+            tensor[dst_idx + 0] = static_cast<float>(r) / 255.0F;
+            tensor[dst_idx + 1] = static_cast<float>(g) / 255.0F;
+            tensor[dst_idx + 2] = static_cast<float>(b) / 255.0F;
+        }
+    }
+}
+
+}  // namespace avm
