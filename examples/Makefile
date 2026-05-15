@@ -24,7 +24,8 @@ EXAMPLES := \
 	07_shared_status \
 	09_sensor_to_shm \
 	10_control_query \
-	11_camera_adapter_v4l2
+	11_camera_adapter_v4l2 \
+	12_yuyv_fused_preprocess
 
 SRCS_00_crc32 := \
 	$(CPP_DIR)/00_crc32.cpp \
@@ -70,6 +71,11 @@ SRCS_10_control_query := \
 SRCS_11_camera_adapter_v4l2 := \
 	$(CPP_DIR)/11_camera_adapter_v4l2.cpp \
 	../src/camera_adapter_v4l2.cpp
+
+SRCS_12_yuyv_fused_preprocess := \
+	$(CPP_DIR)/12_yuyv_fused_preprocess.cpp \
+	../src/image_preprocess.cpp \
+	../src/latency_profiler.cpp
 
 PIPELINE_SRCS_PRODUCER := \
 	$(CPP_DIR)/08_frame_producer.cpp \
@@ -133,6 +139,9 @@ $(BIN_DIR)/10_control_query: $(SRCS_10_control_query) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(BIN_DIR)/11_camera_adapter_v4l2: $(SRCS_11_camera_adapter_v4l2) | dirs
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(BIN_DIR)/12_yuyv_fused_preprocess: $(SRCS_12_yuyv_fused_preprocess) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 frame_ipc: dirs
