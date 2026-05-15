@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
     const auto width = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--width", "640")));
     const auto height = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--height", "480")));
     const auto camera_fps = static_cast<std::uint32_t>(std::stoul(arg_value(argc, argv, "--fps", "30")));
+    const std::string camera_output = arg_value(argc, argv, "--camera-output", "rgb");
     const bool inject_bad_crc = has_flag(argc, argv, "--inject-bad-crc");
     const bool inject_frame_jump = has_flag(argc, argv, "--inject-frame-jump");
 
@@ -59,7 +60,9 @@ int main(int argc, char** argv) {
     } else if (source == "lidar_sim") {
         adapter = std::make_unique<LidarSimAdapter>();
     } else if (source == "camera") {
-        adapter = std::make_unique<CameraAdapterV4L2>(device, width, height, camera_fps);
+        const CameraOutputFormat output_format =
+            (camera_output == "yuyv") ? CameraOutputFormat::YUYV : CameraOutputFormat::RGB888;
+        adapter = std::make_unique<CameraAdapterV4L2>(device, width, height, camera_fps, output_format);
     } else {
         std::cerr << "[media_node] unsupported source: " << source << "\n";
         return 1;
@@ -110,6 +113,7 @@ int main(int argc, char** argv) {
         meta.height = sensor_frame.height;
         meta.format = sensor_frame.format;
         meta.data_size = sensor_frame.data_size;
+        meta.stride_bytes = sensor_frame.stride_bytes;
         meta.buffer_index = static_cast<std::uint32_t>(meta.frame_id % avm::kFramePoolCount);
         meta.crc32 = crc32_compute(sensor_frame.data.data(), sensor_frame.data.size());
         if (inject_bad_crc && i == 50) {

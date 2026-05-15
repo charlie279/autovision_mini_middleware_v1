@@ -1,6 +1,6 @@
 /**
  * @file camera_adapter_v4l2.hpp
- * @brief V4L2 USB UVC 摄像头适配器：使用 ioctl + mmap 采集 YUYV，并向上输出 RGB888 SensorFrame。
+ * @brief V4L2 USB UVC 摄像头适配器：使用 ioctl + mmap 采集 YUYV，可输出 YUYV raw 或 RGB888 SensorFrame。
  */
 #pragma once
 
@@ -11,9 +11,18 @@
 #include <string>
 #include <vector>
 
+enum class CameraOutputFormat : std::uint32_t {
+    RGB888 = 0,
+    YUYV = 1
+};
+
 class CameraAdapterV4L2 final : public SensorAdapter {
 public:
-    CameraAdapterV4L2(std::string device, std::uint32_t width, std::uint32_t height, std::uint32_t fps = 30);
+    CameraAdapterV4L2(std::string device,
+                      std::uint32_t width,
+                      std::uint32_t height,
+                      std::uint32_t fps = 30,
+                      CameraOutputFormat output_format = CameraOutputFormat::RGB888);
     ~CameraAdapterV4L2() override;
 
     bool open() override;
@@ -45,11 +54,17 @@ private:
                                std::uint32_t width,
                                std::uint32_t height,
                                std::uint32_t bytes_per_line);
+    static void copy_yuyv_compact(const std::uint8_t* yuyv,
+                                  std::uint8_t* compact,
+                                  std::uint32_t width,
+                                  std::uint32_t height,
+                                  std::uint32_t bytes_per_line);
 
     std::string device_;
     std::uint32_t width_ = 0;
     std::uint32_t height_ = 0;
     std::uint32_t fps_ = 30;
+    CameraOutputFormat output_format_ = CameraOutputFormat::RGB888;
     std::uint32_t bytes_per_line_ = 0;
     std::uint32_t size_image_ = 0;
 
