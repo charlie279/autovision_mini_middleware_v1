@@ -51,3 +51,54 @@ Notes:
 
 - `soft` uses `ffmpeg` CLI to produce real H.264/H.265 elementary streams when the command is available.
 - `mpp` and `v4l2m2m` are compile-safe backend stubs in generic Linux/VMware; replace their internals on RK3588/OPi5+ or a board with V4L2 M2M codec devices.
+
+
+## V2.1 CamMW Transport Bridge
+
+V2.1 adds a dependency-free CamMW-style transport bridge inside AutoVision. It does not pull FastDDS into the AutoVision build. Instead, it migrates the useful engineering part from CamMW v4.7.2: message schema, QoS payload guard, bounded queue depth/drop statistics, and four-link large-payload validation for `TestMsg`, `RawFrame`, `EncodedFrame`, and `LidarFrame`.
+
+Build and run the four-link validation:
+
+```bash
+./scripts/build.sh
+./scripts/benchmark_transport_four_links.sh 30
+cat logs/benchmark_v2_1_transport/four_links.csv
+```
+
+Run a single mode:
+
+```bash
+./build/transport_four_links_demo --mode raw --frames 30 --output logs/raw_transport.csv
+```
+
+Example-level test:
+
+```bash
+cd examples
+make run EXAMPLE=21_transport_four_links
+```
+
+Scope boundary: V2.1 is a local pub/sub and payload-safety validation backend. It is not a FastDDS runtime inside AutoVision, and it does not claim ROS2/DDS network discovery or RTPS interoperability. The next step is to introduce an `ITransportBackend` adapter for optional FastDDS / SHM / RTOS backends.
+
+
+## V2.2 Transport Pattern
+
+V2.2 adds a CamMW-style communication abstraction that matches the Transmitter / Dispatcher / Receiver design pattern:
+
+```text
+Transport::createTransmitter() -> Transmitter -> RtpsTransmitter / ShmTransmitter
+Transport::createReceiver()    -> Receiver    -> RtpsReceiver / ShmReceiver
+Dispatcher layer               -> RtpsDispatcher / ShmDispatcher
+```
+
+Run:
+
+```bash
+./scripts/benchmark_transport_pattern.sh 5 8
+```
+
+Notes:
+
+- `rtps` is currently a dependency-free RTPS-style local backend, not a real FastDDS endpoint.
+- `shm` is currently a dependency-free local SHM-style backend for abstraction and payload validation.
+- Both backends validate CamMW-style Test / RawFrame / EncodedFrame / LidarFrame payloads, sequence, CRC, lost/drop counters and message-size boundaries.
