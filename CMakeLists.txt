@@ -59,3 +59,44 @@ target_link_libraries(control_service avm_common)
 
 add_executable(control_client src/control_client.cpp)
 target_link_libraries(control_client avm_common)
+
+
+# ============================================================
+# V2.0 video encode module
+# ============================================================
+option(AVM_HAS_FFMPEG  "Enable FFmpeg soft video encoder"        OFF)
+option(AVM_HAS_MPP     "Enable Rockchip MPP hardware encoder"    OFF)
+option(AVM_HAS_V4L2M2M "Enable V4L2 M2M hardware encoder"        ON)
+
+if(AVM_HAS_FFMPEG)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(FFMPEG REQUIRED libavcodec libavutil libswscale)
+    add_compile_definitions(AVM_HAS_FFMPEG)
+endif()
+
+if(AVM_HAS_MPP)
+    find_library(MPP_LIB rockchip_mpp REQUIRED)
+    add_compile_definitions(AVM_HAS_MPP)
+endif()
+
+if(AVM_HAS_V4L2M2M)
+    add_compile_definitions(AVM_HAS_V4L2M2M)
+endif()
+
+add_library(avm_encoder
+    src/soft_video_encoder.cpp
+    src/v4l2_m2m_encoder.cpp
+    src/mpp_video_encoder.cpp
+    src/video_encoder_factory.cpp
+)
+target_link_libraries(avm_encoder avm_common)
+if(AVM_HAS_FFMPEG)
+    target_include_directories(avm_encoder PUBLIC ${FFMPEG_INCLUDE_DIRS})
+    target_link_libraries(avm_encoder ${FFMPEG_LIBRARIES})
+endif()
+if(AVM_HAS_MPP)
+    target_link_libraries(avm_encoder ${MPP_LIB})
+endif()
+
+add_executable(encode_sink_node src/encode_sink_node.cpp)
+target_link_libraries(encode_sink_node avm_encoder avm_common)
