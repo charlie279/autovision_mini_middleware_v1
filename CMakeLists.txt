@@ -62,6 +62,22 @@ target_link_libraries(control_client avm_common)
 
 
 # ============================================================
+# V2.1/V2.2 CamMW-style transport bridge / Transport pattern validation
+# ============================================================
+add_library(avm_transport
+    src/transport_message.cpp
+    src/local_pubsub_transport.cpp
+    src/transport_endpoint.cpp
+)
+target_link_libraries(avm_transport avm_common pthread)
+
+add_executable(transport_four_links_demo src/transport_four_links_demo.cpp)
+target_link_libraries(transport_four_links_demo avm_transport avm_common)
+
+add_executable(transport_pattern_demo src/transport_pattern_demo.cpp)
+target_link_libraries(transport_pattern_demo avm_transport avm_common)
+
+# ============================================================
 # V2.0 video encode module
 # ============================================================
 option(AVM_HAS_FFMPEG  "Enable FFmpeg soft video encoder"        OFF)
