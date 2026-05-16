@@ -27,7 +27,9 @@ EXAMPLES := \
 	17_nv12_libyuv_preprocess \
 	18_runtime_metadata_detection \
 	19_affinity_priority_benchmark \
-	20_video_encode_benchmark
+	20_video_encode_benchmark \
+	21_transport_four_links \
+	22_transport_pattern
 
 SRCS_00_crc32 := $(CPP_DIR)/00_crc32.cpp ../src/crc32.cpp
 SRCS_01_latency_profiler := $(CPP_DIR)/01_latency_profiler.cpp ../src/latency_profiler.cpp
@@ -48,8 +50,9 @@ SRCS_16_udp_lidar_timestamp_sync := $(CPP_DIR)/16_udp_lidar_timestamp_sync.cpp .
 SRCS_17_nv12_libyuv_preprocess := $(CPP_DIR)/17_nv12_libyuv_preprocess.cpp ../src/image_preprocess.cpp ../src/latency_profiler.cpp
 SRCS_18_runtime_metadata_detection := $(CPP_DIR)/18_runtime_metadata_detection.cpp ../src/rknn_runtime_stub.cpp ../src/runtime_metadata.cpp ../src/detection_result.cpp
 SRCS_19_affinity_priority_benchmark := $(CPP_DIR)/19_affinity_priority_benchmark.cpp ../src/system_tuning.cpp
-
 SRCS_20_video_encode_benchmark := $(CPP_DIR)/20_video_encode_benchmark.cpp ../src/soft_video_encoder.cpp ../src/v4l2_m2m_encoder.cpp ../src/mpp_video_encoder.cpp ../src/video_encoder_factory.cpp ../src/latency_profiler.cpp
+SRCS_21_transport_four_links := $(CPP_DIR)/21_transport_four_links.cpp ../src/transport_message.cpp ../src/local_pubsub_transport.cpp ../src/crc32.cpp
+SRCS_22_transport_pattern := $(CPP_DIR)/22_transport_pattern.cpp ../src/transport_message.cpp ../src/local_pubsub_transport.cpp ../src/transport_endpoint.cpp ../src/crc32.cpp
 
 PIPELINE_SRCS_PRODUCER := $(CPP_DIR)/08_frame_producer.cpp ../src/shm_frame_pool.cpp ../src/shm_ring_buffer.cpp ../src/crc32.cpp
 PIPELINE_SRCS_CONSUMER := $(CPP_DIR)/08_frame_consumer.cpp ../src/shm_frame_pool.cpp ../src/shm_ring_buffer.cpp ../src/crc32.cpp
@@ -111,8 +114,11 @@ $(BIN_DIR)/18_runtime_metadata_detection: $(SRCS_18_runtime_metadata_detection) 
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 $(BIN_DIR)/19_affinity_priority_benchmark: $(SRCS_19_affinity_priority_benchmark) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
-
 $(BIN_DIR)/20_video_encode_benchmark: $(SRCS_20_video_encode_benchmark) | dirs
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+$(BIN_DIR)/21_transport_four_links: $(SRCS_21_transport_four_links) | dirs
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+$(BIN_DIR)/22_transport_pattern: $(SRCS_22_transport_pattern) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 frame_ipc: dirs
