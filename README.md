@@ -18,58 +18,36 @@ This package is based on the V1.8 `v1.8-vm-visual-perf-framelease` code line and
 ```bash
 chmod +x scripts/*.sh
 ./scripts/build.sh
-```
 
-## File-input regression
+## V2.0 Video Encode
 
-```bash
-./scripts/prepare_input.sh
-./scripts/run_all_vm.sh
-cat logs/final_status.txt
-```
+V2.0 adds an independent `encode_sink_node` process and a `VideoEncoder` factory layer.
 
-Expected:
-
-```text
-status=NORMAL fps=30 media_frames=120 preprocess_frames=120 npu_frames=120 error_code=0 text="NORMAL"
-```
-
-## New feature validation
+Build:
 
 ```bash
-cd examples
-make all
-make run EXAMPLE=15_fd_passing_alive_counter
-make run EXAMPLE=16_udp_lidar_timestamp_sync
-make run EXAMPLE=17_nv12_libyuv_preprocess
-make run EXAMPLE=18_runtime_metadata_detection
-make run EXAMPLE=19_affinity_priority_benchmark
+./scripts/build.sh
 ```
 
-One-shot validation:
+Run H.264 encode pipeline:
 
 ```bash
-./scripts/benchmark_v1_9_featurepack.sh 10
+./scripts/run_encode_pipeline.sh soft h264 30
 ```
 
-Expected summary:
-
-```text
-main_build=PASS
-file_pipeline=PASS
-algorithm_stub=PASS
-examples_15_19=PASS
-record_replay=PASS
-affinity_priority=PASS_WITH_NON_ROOT_PRIORITY_FALLBACK
-real_camera=WAIT_USER_VMWARE_OR_BOARD
-```
-
-## Camera verification on VMware Ubuntu
+Run H.265 encode pipeline:
 
 ```bash
-./scripts/check_usb_camera_v1_5.sh /dev/video0
-./scripts/run_camera_pipeline.sh /dev/video0 300 640 480 30 dummy rgb
-./scripts/run_camera_pipeline_yuyv_fused.sh /dev/video0 300 640 480 30 dummy
+./scripts/run_encode_pipeline.sh soft h265 10
 ```
 
-This repository still uses POSIX SHM + memcpy. It does not claim production DMA-BUF zero-copy, real RKNN inference, real lidar driver, or ISO 26262 compliance.
+Run encode benchmark:
+
+```bash
+./scripts/benchmark_encode.sh 30 640 480
+```
+
+Notes:
+
+- `soft` uses `ffmpeg` CLI to produce real H.264/H.265 elementary streams when the command is available.
+- `mpp` and `v4l2m2m` are compile-safe backend stubs in generic Linux/VMware; replace their internals on RK3588/OPi5+ or a board with V4L2 M2M codec devices.
