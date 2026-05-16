@@ -16,5 +16,6 @@ struct SensorFrame {
     std::uint32_t format = 0;
     std::uint32_t data_size = 0;
     std::uint32_t stride_bytes = 0;
+    int dmabuf_fd = -1;  // DMA-BUF fd placeholder for MPP/V4L2 zero-copy path; -1 means invalid.
     std::vector<std::uint8_t> data;
 };
