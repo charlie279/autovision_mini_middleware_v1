@@ -53,9 +53,9 @@ Notes:
 - `mpp` and `v4l2m2m` are compile-safe backend stubs in generic Linux/VMware; replace their internals on RK3588/OPi5+ or a board with V4L2 M2M codec devices.
 
 
-## V2.1 CamMW Transport Bridge
+## V2.1 reference transport Transport Bridge
 
-V2.1 adds a dependency-free CamMW-style transport bridge inside AutoVision. It does not pull FastDDS into the AutoVision build. Instead, it migrates the useful engineering part from CamMW v4.7.2: message schema, QoS payload guard, bounded queue depth/drop statistics, and four-link large-payload validation for `TestMsg`, `RawFrame`, `EncodedFrame`, and `LidarFrame`.
+V2.1 adds a dependency-free reference transport-style transport bridge inside AutoVision. It does not pull FastDDS into the AutoVision build. Instead, it migrates the useful engineering part from reference transport v4.7.2: message schema, QoS payload guard, bounded queue depth/drop statistics, and four-link large-payload validation for `TestMsg`, `RawFrame`, `EncodedFrame`, and `LidarFrame`.
 
 Build and run the four-link validation:
 
@@ -83,7 +83,7 @@ Scope boundary: V2.1 is a local pub/sub and payload-safety validation backend. I
 
 ## V2.2 Transport Pattern
 
-V2.2 adds a CamMW-style communication abstraction that matches the Transmitter / Dispatcher / Receiver design pattern:
+V2.2 adds a reference transport-style communication abstraction that matches the Transmitter / Dispatcher / Receiver design pattern:
 
 ```text
 Transport::createTransmitter() -> Transmitter -> RtpsTransmitter / ShmTransmitter
@@ -101,4 +101,22 @@ Notes:
 
 - `rtps` is currently a dependency-free RTPS-style local backend, not a real FastDDS endpoint.
 - `shm` is currently a dependency-free local SHM-style backend for abstraction and payload validation.
-- Both backends validate CamMW-style Test / RawFrame / EncodedFrame / LidarFrame payloads, sequence, CRC, lost/drop counters and message-size boundaries.
+- Both backends validate reference transport-style Test / RawFrame / EncodedFrame / LidarFrame payloads, sequence, CRC, lost/drop counters and message-size boundaries.
+
+## V2.3 FastDDS/RTPS adapter
+
+V2.3 adds an AutoVision-owned optional FastDDS/Fast-RTPS adapter. The default build remains dependency-free and keeps the V2.2 local RTPS-style and SHM-style validation paths. When FastDDS/Fast-RTPS 2.12.x and Fast-CDR are installed, rebuild with:
+
+```bash
+./scripts/build.sh -DAVM_ENABLE_FASTDDS=ON -DCMAKE_PREFIX_PATH=/path/to/fastdds/install
+```
+
+Default dependency-free validation:
+
+```bash
+./scripts/build.sh
+./scripts/benchmark_fastdds_rtps.sh 5 8
+cd examples && make run EXAMPLE=23_fastdds_packet_codec
+```
+
+The optional FastDDS adapter uses AutoVision `TransportEnvelope` serialization and keeps third-party implementation details outside the public project namespace.
