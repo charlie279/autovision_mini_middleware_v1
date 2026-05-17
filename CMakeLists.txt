@@ -62,20 +62,33 @@ target_link_libraries(control_client avm_common)
 
 
 # ============================================================
-# V2.1/V2.2 CamMW-style transport bridge / Transport pattern validation
+# V2.1/V2.2/V2.3 transport bridge / Transport pattern validation
 # ============================================================
+option(AVM_ENABLE_FASTDDS "Enable real FastDDS/Fast-RTPS 2.12.x adapter" OFF)
+
 add_library(avm_transport
     src/transport_message.cpp
     src/local_pubsub_transport.cpp
     src/transport_endpoint.cpp
+    src/fastdds_rtps_transport.cpp
 )
 target_link_libraries(avm_transport avm_common pthread)
+
+if(AVM_ENABLE_FASTDDS)
+    find_package(fastrtps CONFIG REQUIRED)
+    find_package(fastcdr CONFIG REQUIRED)
+    target_compile_definitions(avm_transport PUBLIC AVM_HAS_FASTDDS)
+    target_link_libraries(avm_transport fastrtps fastcdr)
+endif()
 
 add_executable(transport_four_links_demo src/transport_four_links_demo.cpp)
 target_link_libraries(transport_four_links_demo avm_transport avm_common)
 
 add_executable(transport_pattern_demo src/transport_pattern_demo.cpp)
 target_link_libraries(transport_pattern_demo avm_transport avm_common)
+
+add_executable(fastdds_rtps_loopback_demo src/fastdds_rtps_loopback_demo.cpp)
+target_link_libraries(fastdds_rtps_loopback_demo avm_transport avm_common)
 
 # ============================================================
 # V2.0 video encode module
