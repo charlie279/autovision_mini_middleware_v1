@@ -204,3 +204,4 @@ int main(int argc, char** argv) {
     std::cout << "[transport_pattern_demo] csv=" << output << "\n";
     return all_pass ? 0 : 1;
 }
+

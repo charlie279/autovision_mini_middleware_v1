@@ -100,3 +100,4 @@ void FrameReplayAdapter::stop() {
 }
 
 }  // namespace avm
+

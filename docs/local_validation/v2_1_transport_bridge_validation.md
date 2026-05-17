@@ -119,3 +119,4 @@ make run EXAMPLE=21_transport_four_links
 4. VMware 环境没有真实 /dev/video0 时，Camera pipeline 仍需在用户 VMware 或开发板侧复测。
 5. MPP/V4L2 M2M/RKNN/RGA/DMA-BUF 仍保持 V2.0 边界说明：接口预留，不宣称板端真实闭环。
 ```
+

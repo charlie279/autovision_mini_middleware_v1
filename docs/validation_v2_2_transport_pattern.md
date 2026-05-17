@@ -97,3 +97,4 @@ make run EXAMPLE=22_transport_pattern
 4. VMware 下 USB Camera RGB/YUYV 在本次容器无 /dev/video0，仍以既有工作日志为准，用户侧可继续复测。
 5. OPi5+/RK3588 板端 MPP/V4L2 M2M/RKNN/RGA/DMA-BUF 仍等待开发板验证。
 ```
+

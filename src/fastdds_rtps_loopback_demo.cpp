@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
     avm::FastddsRtpsOptions options;
     options.topic = topic;
     options.depth = depth;
-    options.max_payload_size = 512U * 1024U;
+    options.max_payload_size = 2U * 1024U * 1024U;
     options.reliable = false;
 
     std::string error;
@@ -97,3 +97,4 @@ int main(int argc, char** argv) {
               << " payload_errors=" << payload_errors << " result=" << (pass ? "PASS" : "FAIL") << "\n";
     return pass ? 0 : 1;
 }
+

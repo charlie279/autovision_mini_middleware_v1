@@ -71,3 +71,4 @@ RuntimeMetadata DummyRuntime::metadata() const {
     m.outputs.push_back({"objects", {1, 6}, "float32", "NCHW", 0, 1.0F});
     return m;
 }
+

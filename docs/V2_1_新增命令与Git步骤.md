@@ -16,7 +16,7 @@ src/local_pubsub_transport.cpp
 src/transport_four_links_demo.cpp
 examples/cpp/21_transport_four_links.cpp
 scripts/benchmark_transport_four_links.sh
-docs/local_validation/v2_1_transport_bridge_validation.md
+docs/local_validation/v2_1_cammw_transport_bridge_validation.md
 docs/V2_1_新增命令与Git步骤.md
 ```
 
@@ -112,7 +112,7 @@ make run EXAMPLE=21_transport_four_links
 ```bash
 git checkout v2.0-video-encode
 git pull origin v2.0-video-encode
-git checkout -b v2.1-transport-bridge
+git checkout -b v2.1-cammw-transport-bridge
 
 git add include/transport_message.hpp include/local_pubsub_transport.hpp \
         src/transport_message.cpp src/local_pubsub_transport.cpp \
@@ -126,9 +126,10 @@ git commit -m "v2.1-step2: add transport four-link example"
 
 git add scripts/benchmark_transport_four_links.sh README.md \
         docs/V2_1_新增命令与Git步骤.md \
-        docs/local_validation/v2_1_transport_bridge_validation.md
+        docs/local_validation/v2_1_cammw_transport_bridge_validation.md
 
 git commit -m "v2.1-step3: add four-link validation script and docs"
 
-git push -u origin v2.1-transport-bridge
+git push -u origin v2.1-cammw-transport-bridge
 ```
+

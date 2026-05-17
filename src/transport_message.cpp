@@ -157,3 +157,4 @@ TransportValidationResult validate_transport_message(const TransportEnvelope& ms
 }
 
 }  // namespace avm
+

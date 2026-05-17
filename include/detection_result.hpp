@@ -30,3 +30,4 @@ struct DetectionResult {
 };
 
 DetectionResult make_stub_detection_result(const RuntimeOutput& output, std::uint64_t timestamp_ns);
+

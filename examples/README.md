@@ -31,3 +31,12 @@ make run EXAMPLE=21_transport_four_links
 ```
 
 This example validates the migrated reference transport-style RawFrame large-payload schema through the dependency-free local pub/sub backend. Expected result: `size_error=0`, `payload_error=0`, `result=PASS`.
+
+
+## V2.4 camera FastDDS packet example
+
+```bash
+make run EXAMPLE=24_camera_fastdds_packet
+```
+
+This example validates 640x480 camera raw frame packet serialization without requiring FastDDS runtime. It checks that V2.4's 2MiB QoS accepts both YUYV and RGB888 raw camera payloads, while the old 512KiB boundary fails for a 640x480 YUYV frame as expected.

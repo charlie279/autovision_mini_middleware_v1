@@ -188,3 +188,4 @@ int main(int argc, char** argv) {
     encoder->release();
     return encode_ok == 0 ? 4 : 0;
 }
+

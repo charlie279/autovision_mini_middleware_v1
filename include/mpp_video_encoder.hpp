@@ -42,3 +42,4 @@ private:
     std::uint64_t total_bytes_out_ = 0;
     bool initialized_ = false;
 };
+

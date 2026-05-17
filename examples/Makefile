@@ -3,19 +3,6 @@ CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -Wpedantic -O2 -I../include
 LDFLAGS := -pthread -lrt
 
-FASTDDS_PREFIX ?= $(HOME)/Fast-DDS/install
-FASTDDS_LIB_DIR := $(FASTDDS_PREFIX)/lib
-FASTDDS_INC_DIR := $(FASTDDS_PREFIX)/include
-FASTDDS_AVAILABLE := $(wildcard $(FASTDDS_LIB_DIR)/libfastrtps.so*)
-
-ifneq ($(FASTDDS_AVAILABLE),)
-EXAMPLE23_FASTDDS_CXXFLAGS := -DAVM_HAS_FASTDDS -I$(FASTDDS_INC_DIR)
-EXAMPLE23_FASTDDS_LDFLAGS := -L$(FASTDDS_LIB_DIR) -Wl,-rpath,$(FASTDDS_LIB_DIR) -lfastrtps -lfastcdr -lssl -lcrypto
-else
-EXAMPLE23_FASTDDS_CXXFLAGS :=
-EXAMPLE23_FASTDDS_LDFLAGS :=
-endif
-
 BIN_DIR := bin
 CPP_DIR := cpp
 EXAMPLE ?= 00_crc32
@@ -43,7 +30,8 @@ EXAMPLES := \
 	20_video_encode_benchmark \
 	21_transport_four_links \
 	22_transport_pattern \
-	23_fastdds_packet_codec
+	23_fastdds_packet_codec \
+	24_camera_fastdds_packet
 
 SRCS_00_crc32 := $(CPP_DIR)/00_crc32.cpp ../src/crc32.cpp
 SRCS_01_latency_profiler := $(CPP_DIR)/01_latency_profiler.cpp ../src/latency_profiler.cpp
@@ -66,8 +54,9 @@ SRCS_18_runtime_metadata_detection := $(CPP_DIR)/18_runtime_metadata_detection.c
 SRCS_19_affinity_priority_benchmark := $(CPP_DIR)/19_affinity_priority_benchmark.cpp ../src/system_tuning.cpp
 SRCS_20_video_encode_benchmark := $(CPP_DIR)/20_video_encode_benchmark.cpp ../src/soft_video_encoder.cpp ../src/v4l2_m2m_encoder.cpp ../src/mpp_video_encoder.cpp ../src/video_encoder_factory.cpp ../src/latency_profiler.cpp
 SRCS_21_transport_four_links := $(CPP_DIR)/21_transport_four_links.cpp ../src/transport_message.cpp ../src/local_pubsub_transport.cpp ../src/crc32.cpp
-SRCS_22_transport_pattern := $(CPP_DIR)/22_transport_pattern.cpp ../src/transport_message.cpp ../src/local_pubsub_transport.cpp ../src/transport_endpoint.cpp ../src/fastdds_rtps_transport.cpp ../src/crc32.cpp
+SRCS_22_transport_pattern := $(CPP_DIR)/22_transport_pattern.cpp ../src/transport_message.cpp ../src/local_pubsub_transport.cpp ../src/transport_endpoint.cpp ../src/crc32.cpp
 SRCS_23_fastdds_packet_codec := $(CPP_DIR)/23_fastdds_packet_codec.cpp ../src/fastdds_rtps_transport.cpp ../src/transport_message.cpp ../src/crc32.cpp
+SRCS_24_camera_fastdds_packet := $(CPP_DIR)/24_camera_fastdds_packet.cpp ../src/fastdds_rtps_transport.cpp ../src/transport_message.cpp ../src/crc32.cpp
 
 PIPELINE_SRCS_PRODUCER := $(CPP_DIR)/08_frame_producer.cpp ../src/shm_frame_pool.cpp ../src/shm_ring_buffer.cpp ../src/crc32.cpp
 PIPELINE_SRCS_CONSUMER := $(CPP_DIR)/08_frame_consumer.cpp ../src/shm_frame_pool.cpp ../src/shm_ring_buffer.cpp ../src/crc32.cpp
@@ -136,7 +125,9 @@ $(BIN_DIR)/21_transport_four_links: $(SRCS_21_transport_four_links) | dirs
 $(BIN_DIR)/22_transport_pattern: $(SRCS_22_transport_pattern) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 $(BIN_DIR)/23_fastdds_packet_codec: $(SRCS_23_fastdds_packet_codec) | dirs
-	$(CXX) $(CXXFLAGS) $(EXAMPLE23_FASTDDS_CXXFLAGS) $^ -o $@ $(EXAMPLE23_FASTDDS_LDFLAGS) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+$(BIN_DIR)/24_camera_fastdds_packet: $(SRCS_24_camera_fastdds_packet) | dirs
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 frame_ipc: dirs
 	$(CXX) $(CXXFLAGS) $(PIPELINE_SRCS_PRODUCER) -o $(BIN_DIR)/08_frame_producer $(LDFLAGS)
@@ -159,3 +150,4 @@ run_frame_ipc: frame_ipc
 clean:
 	rm -rf $(BIN_DIR) logs
 	rm -f /dev/shm/avm_example_frame_pool /dev/shm/avm_example_frame_meta_ring /dev/shm/avm_example_status /dev/shm/avm_example_sensor_pool /dev/shm/avm_example_sensor_ring
+

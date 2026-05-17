@@ -45,3 +45,4 @@ DetectionResult make_stub_detection_result(const RuntimeOutput& output, std::uin
     }
     return result;
 }
+

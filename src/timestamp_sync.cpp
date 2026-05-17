@@ -80,3 +80,4 @@ std::optional<SyncedFramePair> TimestampSync::try_sync() {
 }
 
 }  // namespace avm
+

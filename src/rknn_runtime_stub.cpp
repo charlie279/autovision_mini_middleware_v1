@@ -65,3 +65,4 @@ RuntimeMetadata RknnRuntimeStub::metadata() const {
     m.outputs.push_back({"classes", {1, 100}, "int32", "NCHW", 0, 1.0F});
     return m;
 }
+

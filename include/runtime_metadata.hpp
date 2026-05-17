@@ -28,3 +28,4 @@ struct RuntimeMetadata {
 
     std::string to_json() const;
 };
+

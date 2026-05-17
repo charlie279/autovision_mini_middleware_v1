@@ -201,3 +201,4 @@ double SoftVideoEncoder::avg_bitrate_kbps() const {
     const double seconds = static_cast<double>(frames_encoded_) / static_cast<double>(cfg_.fps);
     return (static_cast<double>(total_bytes_out_) * 8.0 / 1000.0) / seconds;
 }
+

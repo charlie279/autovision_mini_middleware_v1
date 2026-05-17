@@ -25,3 +25,4 @@ affinity_priority=PASS_WITH_NON_ROOT_PRIORITY_FALLBACK
 real_camera=WAIT_USER_VMWARE_OR_BOARD
 SUMMARY
 cat logs/benchmark/v1_9_validation_summary.txt
+

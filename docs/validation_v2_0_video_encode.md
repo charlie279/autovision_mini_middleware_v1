@@ -109,3 +109,4 @@ logs/benchmark_v2_0/encode_benchmark.csv
 2. 当前容器没有 Rockchip MPP SDK 和真实 V4L2 M2M 编码设备，因此 `mpp` 与 `v4l2m2m` 为可编译、可运行的接口 stub；不宣称已完成板端硬编。
 3. 当前 `soft` backend 在存在 `ffmpeg` 命令时会生成真实 H.264/H.265 裸流；若目标环境没有 `ffmpeg`，会退回 soft stub，只用于流程验证。
 4. 若你在 VMware Ubuntu 安装了 FFmpeg 开发包，后续可以把 `SoftVideoEncoder` 内部替换为 libavcodec API 实现，外部 `VideoEncoder` 接口、`encode_sink_node` 和脚本无需变化。
+

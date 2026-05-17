@@ -65,3 +65,4 @@ TransportValidationResult validate_transport_message(const TransportEnvelope& ms
 std::size_t expected_transport_payload_size(const TransportEnvelope& msg);
 
 }  // namespace avm
+

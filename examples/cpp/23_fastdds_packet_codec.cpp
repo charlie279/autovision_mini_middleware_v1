@@ -24,3 +24,4 @@ int main() {
               << " result=" << ((ok && check.ok) ? "PASS" : "FAIL") << "\n";
     return (ok && check.ok) ? 0 : 1;
 }
+

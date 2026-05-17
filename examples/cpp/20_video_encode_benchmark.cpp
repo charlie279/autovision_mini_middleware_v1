@@ -141,3 +141,4 @@ int main(int argc, char** argv) {
     std::cout << "[20_video_encode_benchmark] csv=" << csv_path << "\n";
     return 0;
 }
+

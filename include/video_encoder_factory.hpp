@@ -15,3 +15,4 @@ public:
     static std::unique_ptr<VideoEncoder> create(const VideoEncodeConfig& cfg);
     static std::string available_backends();
 };
+

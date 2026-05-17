@@ -36,3 +36,4 @@ int main() {
               << " result=" << (result.ok ? "PASS" : "FAIL") << "\n";
     return result.ok ? 0 : 1;
 }
+

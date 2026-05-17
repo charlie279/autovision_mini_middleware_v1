@@ -15,3 +15,4 @@ make -C examples all
 
 cp examples/logs/encode_benchmark.csv "${LOG_DIR}/encode_benchmark.csv"
 echo "[benchmark_encode] done csv=${LOG_DIR}/encode_benchmark.csv"
+

@@ -40,3 +40,4 @@ int main() {
               << " p95=" << profiler.percentile(95.0) << "\n";
     return 0;
 }
+

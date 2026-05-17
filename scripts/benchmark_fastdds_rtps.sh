@@ -11,3 +11,4 @@ mkdir -p "$OUT_DIR"
   --output "$OUT_DIR/fastdds_rtps.csv" \
   --allow-unavailable
 cat "$OUT_DIR/fastdds_rtps.csv"
+

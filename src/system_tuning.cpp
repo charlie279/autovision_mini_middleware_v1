@@ -51,3 +51,4 @@ std::uint64_t run_cpu_spin_benchmark(std::uint64_t iterations) {
 }
 
 }  // namespace avm
+

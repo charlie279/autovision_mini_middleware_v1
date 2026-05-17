@@ -24,3 +24,4 @@ with path.open('wb') as f:
         f.write(frame)
 print(f'[prepare_input] generated: {path} ({expected} bytes)')
 PY
+

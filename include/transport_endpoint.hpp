@@ -212,3 +212,4 @@ TransportEndpointStats merge_endpoint_stats(const TransportEndpointStats& a,
                                             const TransportEndpointStats& b);
 
 }  // namespace avm
+

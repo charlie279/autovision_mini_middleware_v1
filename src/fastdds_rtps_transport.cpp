@@ -384,3 +384,4 @@ void FastddsRtpsBus::close() { impl_->close(); }
 FastddsRtpsStats FastddsRtpsBus::stats() const { return impl_->stats(); }
 
 }  // namespace avm
+

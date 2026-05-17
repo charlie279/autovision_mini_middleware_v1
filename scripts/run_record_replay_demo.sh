@@ -20,3 +20,4 @@ cat logs/replay_media.log | tail -n 2
 cat logs/replay_preprocess.log | tail -n 2
 cat logs/replay_npu.log | tail -n 2
 cat logs/algorithm_stub.log | tail -n 2
+

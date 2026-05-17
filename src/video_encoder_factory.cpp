@@ -27,3 +27,4 @@ std::unique_ptr<VideoEncoder> VideoEncoderFactory::create(const VideoEncodeConfi
 std::string VideoEncoderFactory::available_backends() {
     return "soft v4l2m2m mpp";
 }
+

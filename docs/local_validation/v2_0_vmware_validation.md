@@ -29,3 +29,4 @@ v4l2m2m,H264,10,0.0015862,0.0027167,2.16
 
 ## camera rgb/yuyv
 status=NORMAL fps=30 media_frames=120 preprocess_frames=120 npu_frames=120 error_code=0 text="NORMAL"
+

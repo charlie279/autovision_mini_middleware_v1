@@ -90,6 +90,15 @@ target_link_libraries(transport_pattern_demo avm_transport avm_common)
 add_executable(fastdds_rtps_loopback_demo src/fastdds_rtps_loopback_demo.cpp)
 target_link_libraries(fastdds_rtps_loopback_demo avm_transport avm_common)
 
+add_executable(camera_fastdds_pub
+    src/camera_fastdds_pub.cpp
+    src/camera_adapter_v4l2.cpp
+)
+target_link_libraries(camera_fastdds_pub avm_transport avm_common)
+
+add_executable(camera_fastdds_sub src/camera_fastdds_sub.cpp)
+target_link_libraries(camera_fastdds_sub avm_transport avm_common)
+
 # ============================================================
 # V2.0 video encode module
 # ============================================================
@@ -129,3 +138,4 @@ endif()
 
 add_executable(encode_sink_node src/encode_sink_node.cpp)
 target_link_libraries(encode_sink_node avm_encoder avm_common)
+

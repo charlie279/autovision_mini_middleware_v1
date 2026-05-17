@@ -96,3 +96,4 @@ void UdpLidarSimAdapter::stop() {
         fd_ = -1;
     }
 }
+

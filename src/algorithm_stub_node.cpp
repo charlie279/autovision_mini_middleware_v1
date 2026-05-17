@@ -86,3 +86,4 @@ int main(int argc, char** argv) {
     std::cout << "[algorithm_stub_node] finished detections=" << count << " output=" << output << "\n";
     return 0;
 }
+

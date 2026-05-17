@@ -15,3 +15,4 @@ echo "[benchmark_transport_pattern] $WIDTH_NOTE"
 
 echo "[benchmark_transport_pattern] output=logs/benchmark_v2_2/transport_pattern.csv"
 cat logs/benchmark_v2_2/transport_pattern.csv
+

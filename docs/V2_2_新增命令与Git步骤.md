@@ -59,7 +59,7 @@ make run EXAMPLE=22_transport_pattern
 ## 8. Git 分阶段提交建议
 
 ```bash
-git checkout v2.1-transport-bridge
+git checkout v2.1-cammw-transport-bridge
 git pull
 git checkout -b v2.2-transport-pattern
 
@@ -91,3 +91,4 @@ examples/logs/
 *.raw_input
 compile_commands.json
 ```
+

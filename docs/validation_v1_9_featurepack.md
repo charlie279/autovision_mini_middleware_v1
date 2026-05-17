@@ -17,3 +17,4 @@ Waiting for user-side validation:
 - GStreamer camera baseline.
 - perf availability on the user’s kernel.
 - Orange Pi 5 Plus / ARM64 build and board-side camera/NPU/RGA validation.
+

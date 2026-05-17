@@ -68,3 +68,4 @@ Expected result after the dependency is correctly installed:
 backend,compiled,topic,frames,sent,received,size_errors,payload_errors,status
 fastdds,true,avm/v2_3/fastdds/raw,5,5,5,0,0,PASS
 ```
+

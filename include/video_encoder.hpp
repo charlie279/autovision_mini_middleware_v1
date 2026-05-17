@@ -56,3 +56,4 @@ public:
     virtual double avg_encode_ms() const = 0;
     virtual double avg_bitrate_kbps() const = 0;
 };
+

@@ -120,3 +120,54 @@ cd examples && make run EXAMPLE=23_fastdds_packet_codec
 ```
 
 The optional FastDDS adapter uses AutoVision `TransportEnvelope` serialization and keeps third-party implementation details outside the public project namespace.
+
+
+## V2.4 Camera FastDDS Pub/Sub
+
+V2.4 adds a two-process Camera FastDDS validation path on top of the V2.3 optional FastDDS/RTPS adapter:
+
+```text
+USB Camera /dev/video0 or synthetic source
+    -> camera_fastdds_pub
+    -> FastDDS / RTPS topic
+    -> camera_fastdds_sub
+    -> size / sequence / CRC / latency validation
+```
+
+The default build remains dependency-free. Without FastDDS/Fast-RTPS installed, the new programs report `NOT_COMPILED` explicitly.
+
+Dependency-free validation:
+
+```bash
+./scripts/build.sh
+./scripts/benchmark_camera_fastdds_pub_sub.sh 5 640 480 30 yuyv
+cd examples && make run EXAMPLE=24_camera_fastdds_packet
+```
+
+Real FastDDS/Fast-RTPS validation after installing FastDDS/Fast-CDR:
+
+```bash
+./scripts/build.sh -DAVM_ENABLE_FASTDDS=ON -DCMAKE_PREFIX_PATH=$HOME/Fast-DDS/install
+./scripts/benchmark_camera_fastdds_pub_sub.sh 60 640 480 30 yuyv avm/camera/synthetic_raw
+./scripts/run_camera_fastdds_pub_sub.sh /dev/video0 300 640 480 30 yuyv avm/camera/raw
+```
+
+V2.4 increases the default FastDDS adapter payload limit to 2MiB so that 640x480 YUYV raw frames (614400 bytes) and RGB888 raw frames (921600 bytes) can pass the transport payload guard.
+
+## V2.4 Camera FastDDS Pub/Sub stable validation revision
+
+V2.4 adds two-process Camera FastDDS publisher/subscriber demos:
+
+```bash
+./scripts/benchmark_camera_fastdds_pub_sub.sh 60 640 480 30 yuyv avm/camera/synthetic_raw
+./scripts/run_camera_fastdds_pub_sub.sh /dev/video0 60 640 480 30 yuyv avm/camera/raw
+```
+
+The stable-validation revision uses:
+
+- `--startup-ms 5000` before the first publish, giving DDS endpoint discovery time to match.
+- `--warmup-frames 10` and subscriber `--start-seq 11`, so warmup traffic is excluded from formal validation.
+- `--repeat 5` plus subscriber-side de-duplication, improving robustness for RTPS/UDP fragmented raw camera frames in VMware.
+- `--depth 512` and `--reliable` by default in V2.4 scripts.
+
+Default builds without FastDDS still compile and report `NOT_COMPILED` clearly. Real FastDDS validation requires rebuilding with `-DAVM_ENABLE_FASTDDS=ON` and a valid FastDDS/Fast-CDR installation.

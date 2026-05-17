@@ -12,3 +12,4 @@ cd ..
   echo -n "cpu0_fifo10,0,10,"; ./examples/bin/19_affinity_priority_benchmark --cpu 0 --priority 10 --iterations "$ITER" | tr ',' ';'
 } > logs/benchmark/affinity_priority_benchmark.csv
 cat logs/benchmark/affinity_priority_benchmark.csv
+

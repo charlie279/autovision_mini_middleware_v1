@@ -16,3 +16,4 @@ mkdir -p logs/benchmark_v2_1_transport
   --output logs/benchmark_v2_1_transport/four_links.csv
 
 echo "[benchmark_transport_four_links] output=logs/benchmark_v2_1_transport/four_links.csv"
+

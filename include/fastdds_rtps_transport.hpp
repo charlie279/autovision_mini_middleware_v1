@@ -19,7 +19,7 @@ struct FastddsRtpsOptions {
     std::string topic = "avm/fastdds/default";
     std::uint32_t domain_id = 0;
     std::uint32_t depth = 8;
-    std::size_t max_payload_size = 512U * 1024U;
+    std::size_t max_payload_size = 2U * 1024U * 1024U;
     bool reliable = false;
     std::string participant_name = "autovision_fastdds_rtps";
     std::string bind_ip = "127.0.0.1";
@@ -64,3 +64,4 @@ private:
 };
 
 }  // namespace avm
+

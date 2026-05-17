@@ -50,3 +50,4 @@ private:
     bool cli_mode_ = false;
     bool ffmpeg_done_ = false;
 };
+

@@ -47,3 +47,4 @@ int main() {
               << " result=" << (pass ? "PASS" : "FAIL") << "\n";
     return pass ? 0 : 1;
 }
+

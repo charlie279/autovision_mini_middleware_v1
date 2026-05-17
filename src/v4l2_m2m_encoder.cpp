@@ -70,3 +70,4 @@ std::vector<std::string> V4l2M2mEncoder::enumerate_m2m_devices() {
     }
     return devices;
 }
+

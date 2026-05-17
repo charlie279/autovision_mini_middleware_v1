@@ -32,3 +32,4 @@ private:
     std::uint64_t next_frame_id_ = 1;
     std::vector<std::uint8_t> buffer_;
 };
+
