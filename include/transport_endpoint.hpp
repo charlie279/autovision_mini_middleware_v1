@@ -1,6 +1,6 @@
 /**
  * @file transport_endpoint.hpp
- * @brief CamMW-style Transport / Transmitter / Dispatcher / Receiver abstraction for AutoVision V2.2.
+ * @brief reference transport-style Transport / Transmitter / Dispatcher / Receiver abstraction for AutoVision V2.2.
  *
  * This module mirrors the communication pattern shown in the design diagram:
  *
@@ -19,6 +19,7 @@
  */
 #pragma once
 
+#include "fastdds_rtps_transport.hpp"
 #include "local_pubsub_transport.hpp"
 #include "transport_message.hpp"
 
@@ -32,7 +33,8 @@ namespace avm {
 
 enum class TransportBackend : std::uint32_t {
     RTPS = 0,
-    SHM = 1
+    SHM = 1,
+    FASTDDS_RTPS = 2
 };
 
 struct TransportRole {
@@ -91,6 +93,17 @@ private:
     std::shared_ptr<LocalPubSubTransport> channel_;
 };
 
+class FastddsRtpsTransmitter final : public Transmitter {
+public:
+    FastddsRtpsTransmitter(TransportRole role, std::shared_ptr<FastddsRtpsBus> bus);
+    bool transmit(const TransportEnvelope& msg, std::string* error = nullptr) override;
+    TransportEndpointStats stats() const override;
+    const char* type_name() const override { return "FastddsRtpsTransmitter(real_fastdds_optional)"; }
+
+private:
+    std::shared_ptr<FastddsRtpsBus> bus_;
+};
+
 class Dispatcher {
 public:
     explicit Dispatcher(TransportRole role);
@@ -128,6 +141,18 @@ private:
     mutable TransportEndpointStats stats_{};
 };
 
+class FastddsRtpsDispatcher final : public Dispatcher {
+public:
+    FastddsRtpsDispatcher(TransportRole role, std::shared_ptr<FastddsRtpsBus> bus);
+    bool dispatch(TransportEnvelope& msg) override;
+    TransportEndpointStats stats() const override;
+    const char* type_name() const override { return "FastddsRtpsDispatcher(real_fastdds_optional)"; }
+
+private:
+    std::shared_ptr<FastddsRtpsBus> bus_;
+    mutable TransportEndpointStats stats_{};
+};
+
 class Receiver {
 public:
     explicit Receiver(TransportRole role, std::unique_ptr<Dispatcher> dispatcher);
@@ -162,6 +187,13 @@ public:
     const char* type_name() const override { return "ShmReceiver(local_shm_style)"; }
 };
 
+class FastddsRtpsReceiver final : public Receiver {
+public:
+    FastddsRtpsReceiver(TransportRole role, std::unique_ptr<FastddsRtpsDispatcher> dispatcher);
+    bool receive(TransportEnvelope& msg) override;
+    const char* type_name() const override { return "FastddsRtpsReceiver(real_fastdds_optional)"; }
+};
+
 class Transport {
 public:
     std::unique_ptr<Transmitter> createTransmitter(const TransportRole& role);
@@ -169,9 +201,11 @@ public:
 
 private:
     std::shared_ptr<LocalPubSubTransport> getOrCreateChannel(const TransportRole& role);
+    std::shared_ptr<FastddsRtpsBus> getOrCreateFastddsChannel(const TransportRole& role);
 
     std::mutex mutex_;
     std::map<std::string, std::shared_ptr<LocalPubSubTransport>> channels_;
+    std::map<std::string, std::shared_ptr<FastddsRtpsBus>> fastdds_channels_;
 };
 
 TransportEndpointStats merge_endpoint_stats(const TransportEndpointStats& a,

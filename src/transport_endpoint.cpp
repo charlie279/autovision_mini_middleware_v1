@@ -1,6 +1,6 @@
 /**
  * @file transport_endpoint.cpp
- * @brief Implementation of CamMW-style Transport / Transmitter / Dispatcher / Receiver abstraction.
+ * @brief Implementation of reference transport-style Transport / Transmitter / Dispatcher / Receiver abstraction.
  */
 #include "transport_endpoint.hpp"
 
@@ -15,6 +15,8 @@ const char* transport_backend_to_string(TransportBackend backend) {
             return "rtps";
         case TransportBackend::SHM:
             return "shm";
+        case TransportBackend::FASTDDS_RTPS:
+            return "fastdds";
         default:
             return "unknown";
     }
@@ -25,8 +27,11 @@ TransportBackend parse_transport_backend(const std::string& text, TransportBacke
     std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) {
         return static_cast<char>(std::tolower(c));
     });
-    if (lower == "rtps" || lower == "fastrtps" || lower == "dds") {
+    if (lower == "rtps" || lower == "local_rtps") {
         return TransportBackend::RTPS;
+    }
+    if (lower == "fastdds" || lower == "fastrtps" || lower == "fast-rtps" || lower == "dds") {
+        return TransportBackend::FASTDDS_RTPS;
     }
     if (lower == "shm" || lower == "shared_memory" || lower == "shared-memory") {
         return TransportBackend::SHM;
@@ -80,6 +85,28 @@ TransportEndpointStats ShmTransmitter::stats() const {
     return out;
 }
 
+FastddsRtpsTransmitter::FastddsRtpsTransmitter(TransportRole role, std::shared_ptr<FastddsRtpsBus> bus)
+    : Transmitter(std::move(role)), bus_(std::move(bus)) {}
+
+bool FastddsRtpsTransmitter::transmit(const TransportEnvelope& msg, std::string* error) {
+    return bus_ != nullptr && bus_->publish(msg, error);
+}
+
+TransportEndpointStats FastddsRtpsTransmitter::stats() const {
+    TransportEndpointStats out;
+    if (bus_ == nullptr) {
+        return out;
+    }
+    const auto s = bus_->stats();
+    out.sent = s.sent;
+    out.received = s.received;
+    out.dropped = s.dropped;
+    out.size_errors = s.size_errors;
+    out.payload_errors = s.payload_errors;
+    out.empty_polls = s.empty_polls;
+    return out;
+}
+
 Dispatcher::Dispatcher(TransportRole role) : role_(std::move(role)) {}
 
 RtpsDispatcher::RtpsDispatcher(TransportRole role, std::shared_ptr<LocalPubSubTransport> channel)
@@ -111,6 +138,23 @@ bool ShmDispatcher::dispatch(TransportEnvelope& msg) {
 }
 
 TransportEndpointStats ShmDispatcher::stats() const {
+    return stats_;
+}
+
+FastddsRtpsDispatcher::FastddsRtpsDispatcher(TransportRole role, std::shared_ptr<FastddsRtpsBus> bus)
+    : Dispatcher(std::move(role)), bus_(std::move(bus)) {}
+
+bool FastddsRtpsDispatcher::dispatch(TransportEnvelope& msg) {
+    std::string error;
+    if (bus_ == nullptr || !bus_->take(msg, &error)) {
+        ++stats_.empty_polls;
+        return false;
+    }
+    ++stats_.received;
+    return true;
+}
+
+TransportEndpointStats FastddsRtpsDispatcher::stats() const {
     return stats_;
 }
 
@@ -167,6 +211,18 @@ bool ShmReceiver::receive(TransportEnvelope& msg) {
     return true;
 }
 
+FastddsRtpsReceiver::FastddsRtpsReceiver(TransportRole role, std::unique_ptr<FastddsRtpsDispatcher> dispatcher)
+    : Receiver(std::move(role), std::move(dispatcher)) {}
+
+bool FastddsRtpsReceiver::receive(TransportEnvelope& msg) {
+    if (!dispatcher_ || !dispatcher_->dispatch(msg)) {
+        ++stats_.empty_polls;
+        return false;
+    }
+    update_receive_stats(msg);
+    return true;
+}
+
 std::shared_ptr<LocalPubSubTransport> Transport::getOrCreateChannel(const TransportRole& role) {
     std::lock_guard<std::mutex> lock(mutex_);
     const std::string key = std::string(transport_backend_to_string(role.backend)) + ":" + role.channel_name;
@@ -179,7 +235,29 @@ std::shared_ptr<LocalPubSubTransport> Transport::getOrCreateChannel(const Transp
     return channel;
 }
 
+std::shared_ptr<FastddsRtpsBus> Transport::getOrCreateFastddsChannel(const TransportRole& role) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    const std::string key = std::string(transport_backend_to_string(role.backend)) + ":" + role.channel_name;
+    auto it = fastdds_channels_.find(key);
+    if (it != fastdds_channels_.end()) {
+        return it->second;
+    }
+    FastddsRtpsOptions options;
+    options.topic = role.channel_name;
+    options.depth = static_cast<std::uint32_t>(role.qos.depth);
+    options.max_payload_size = role.qos.msg_size;
+    options.reliable = role.qos.reliable;
+    auto bus = std::make_shared<FastddsRtpsBus>(options);
+    std::string error;
+    bus->open(&error);
+    fastdds_channels_[key] = bus;
+    return bus;
+}
+
 std::unique_ptr<Transmitter> Transport::createTransmitter(const TransportRole& role) {
+    if (role.backend == TransportBackend::FASTDDS_RTPS) {
+        return std::make_unique<FastddsRtpsTransmitter>(role, getOrCreateFastddsChannel(role));
+    }
     auto channel = getOrCreateChannel(role);
     if (role.backend == TransportBackend::RTPS) {
         return std::make_unique<RtpsTransmitter>(role, channel);
@@ -188,6 +266,10 @@ std::unique_ptr<Transmitter> Transport::createTransmitter(const TransportRole& r
 }
 
 std::unique_ptr<Receiver> Transport::createReceiver(const TransportRole& role) {
+    if (role.backend == TransportBackend::FASTDDS_RTPS) {
+        auto dispatcher = std::make_unique<FastddsRtpsDispatcher>(role, getOrCreateFastddsChannel(role));
+        return std::make_unique<FastddsRtpsReceiver>(role, std::move(dispatcher));
+    }
     auto channel = getOrCreateChannel(role);
     if (role.backend == TransportBackend::RTPS) {
         auto dispatcher = std::make_unique<RtpsDispatcher>(role, channel);
