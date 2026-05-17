@@ -1,4 +1,3 @@
-
 /**
  * @file record_replay.hpp
  * @brief Minimal binary record/replay format for SensorFrame streams.

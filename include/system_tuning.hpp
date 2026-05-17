@@ -1,4 +1,3 @@
-
 /**
  * @file system_tuning.hpp
  * @brief CPU affinity and thread priority helpers used by benchmark examples.

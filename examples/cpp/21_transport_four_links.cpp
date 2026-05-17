@@ -1,6 +1,6 @@
 /**
  * @file 21_transport_four_links.cpp
- * @brief Interface-level test for CamMW-style local pub/sub large-payload validation.
+ * @brief Interface-level test for reference transport-style local pub/sub large-payload validation.
  */
 #include "local_pubsub_transport.hpp"
 #include "transport_message.hpp"

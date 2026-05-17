@@ -1,4 +1,3 @@
-
 #include "detection_result.hpp"
 #include "dummy_runtime.hpp"
 #include "rknn_runtime_stub.hpp"

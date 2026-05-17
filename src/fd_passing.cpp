@@ -1,4 +1,3 @@
-
 /**
  * @file fd_passing.cpp
  * @brief Unix domain socket SCM_RIGHTS fd passing helpers.

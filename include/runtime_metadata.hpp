@@ -1,4 +1,3 @@
-
 /**
  * @file runtime_metadata.hpp
  * @brief RKNN-like runtime metadata and IO query mock schema.

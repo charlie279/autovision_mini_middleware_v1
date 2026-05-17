@@ -1,6 +1,6 @@
 /**
  * @file transport_message.cpp
- * @brief CamMW-style four-link transport message generation and validation.
+ * @brief reference transport-style four-link transport message generation and validation.
  */
 #include "transport_message.hpp"
 
@@ -56,7 +56,7 @@ TransportEnvelope make_test_msg(std::uint64_t seq) {
     TransportEnvelope msg;
     msg.kind = TransportMessageKind::TEST;
     msg.seq = seq;
-    const std::string text = "AutoVision-CamMW-TestMsg seq=" + std::to_string(seq);
+    const std::string text = "AutoVision-reference transport-TestMsg seq=" + std::to_string(seq);
     msg.payload.assign(text.begin(), text.end());
     msg.raw_size = static_cast<std::uint32_t>(msg.payload.size());
     return finalize(std::move(msg));

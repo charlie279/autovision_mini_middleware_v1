@@ -1,4 +1,3 @@
-
 /**
  * @file detection_result.cpp
  * @brief DetectionResult schema and deterministic algorithm stub helpers.

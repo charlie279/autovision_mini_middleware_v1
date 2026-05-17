@@ -1,6 +1,6 @@
 /**
  * @file local_pubsub_transport.hpp
- * @brief Dependency-free local pub/sub backend used to migrate CamMW four-link payload checks into AutoVision.
+ * @brief Dependency-free local pub/sub backend used to migrate reference transport four-link payload checks into AutoVision.
  */
 #pragma once
 

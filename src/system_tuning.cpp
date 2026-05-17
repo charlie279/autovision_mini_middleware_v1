@@ -1,4 +1,3 @@
-
 /**
  * @file system_tuning.cpp
  * @brief CPU affinity and scheduling-priority helpers.

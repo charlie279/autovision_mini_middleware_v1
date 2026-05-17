@@ -30,4 +30,4 @@ examples/
 make run EXAMPLE=21_transport_four_links
 ```
 
-This example validates the migrated CamMW-style RawFrame large-payload schema through the dependency-free local pub/sub backend. Expected result: `size_error=0`, `payload_error=0`, `result=PASS`.
+This example validates the migrated reference transport-style RawFrame large-payload schema through the dependency-free local pub/sub backend. Expected result: `size_error=0`, `payload_error=0`, `result=PASS`.

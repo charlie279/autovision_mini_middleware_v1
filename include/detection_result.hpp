@@ -1,4 +1,3 @@
-
 /**
  * @file detection_result.hpp
  * @brief DetectionResult schema for algorithm platform stub output.

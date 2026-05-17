@@ -1,9 +1,9 @@
-# V2.1 CamMW Transport Bridge Local Validation
+# V2.1 reference transport Transport Bridge Local Validation
 
 ## 基线
 
 - AutoVision 基准：V2.0 Video Encode 代码结构。
-- CamMW 迁移点：四链路 TestMsg / RawFrame / EncodedFrame / LidarFrame，大 payload msg_size/depth/payload 校验。
+- reference transport 迁移点：四链路 TestMsg / RawFrame / EncodedFrame / LidarFrame，大 payload msg_size/depth/payload 校验。
 - 本地实现：dependency-free local pub/sub backend，不依赖 FastDDS。
 
 ## 1. 主工程编译
@@ -53,7 +53,7 @@ width=640
 height=480
 ```
 
-## 4. V2.1 CamMW-style 四链路验证
+## 4. V2.1 reference transport-style 四链路验证
 
 命令：
 
@@ -113,7 +113,7 @@ make run EXAMPLE=21_transport_four_links
 ## 7. 当前等待验证
 
 ```text
-1. 真实 FastDDS backend 尚未接入 AutoVision。CamMW 仓库本身的 FastDDS 大 payload 修复结果不能直接等价为 AutoVision 内部 DDS 已接入。
+1. 真实 FastDDS backend 尚未接入 AutoVision。reference transport 仓库本身的 FastDDS 大 payload 修复结果不能直接等价为 AutoVision 内部 DDS 已接入。
 2. V2.1 仅验证 local pub/sub backend 的 payload 安全、队列深度与四链路 schema。
 3. 跨进程 DDS discovery、RTPS writer/reader history、UDP/TCP/SHM DDS transport、ROS2 互操作仍需后续版本验证。
 4. VMware 环境没有真实 /dev/video0 时，Camera pipeline 仍需在用户 VMware 或开发板侧复测。

@@ -1,4 +1,3 @@
-
 /**
  * @file raii_fd.hpp
  * @brief Minimal RAII wrappers for Linux file descriptors and mmap regions.

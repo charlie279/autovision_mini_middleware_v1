@@ -1,4 +1,3 @@
-
 #include "avm_config.hpp"
 #include "image_preprocess.hpp"
 #include "latency_profiler.hpp"

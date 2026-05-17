@@ -1,4 +1,3 @@
-
 /**
  * @file algorithm_stub_node.cpp
  * @brief Algorithm-platform stub: converts RuntimeOutput records into DetectionResult schema.

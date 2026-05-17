@@ -1,4 +1,3 @@
-
 /**
  * @file udp_lidar_sim_adapter.cpp
  * @brief UDP Lidar simulator adapter implementation.

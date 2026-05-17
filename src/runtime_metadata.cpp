@@ -1,4 +1,3 @@
-
 /**
  * @file runtime_metadata.cpp
  * @brief RuntimeMetadata JSON serialization.

@@ -1,6 +1,6 @@
 /**
  * @file transport_message.hpp
- * @brief CamMW-style four-link transport message schema and payload validation helpers.
+ * @brief reference transport-style four-link transport message schema and payload validation helpers.
  */
 #pragma once
 

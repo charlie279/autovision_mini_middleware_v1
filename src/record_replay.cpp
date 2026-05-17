@@ -1,4 +1,3 @@
-
 /**
  * @file record_replay.cpp
  * @brief Frame record/replay implementation.

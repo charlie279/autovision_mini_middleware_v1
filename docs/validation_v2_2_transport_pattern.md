@@ -2,7 +2,7 @@
 
 ## 版本定位
 
-V2.2 在 V2.1 CamMW 四链路 payload 校验基础上，新增与通信设计图一致的通信抽象：
+V2.2 在 V2.1 reference transport 四链路 payload 校验基础上，新增与通信设计图一致的通信抽象：
 
 ```text
 Transport
@@ -16,7 +16,7 @@ Transport
               └── ShmReceiver + ShmDispatcher
 ```
 
-当前 generic Linux/VMware 环境不引入 FastDDS 外部依赖。`RtpsTransmitter/RtpsReceiver` 是 RTPS-style local backend，用于验证抽象边界、消息校验、大 payload、sequence、CRC、drop/lost 统计和测试体系；真实 FastDDS/RTPS backend 留到后续 V2.3 与 CamMW 进一步融合。
+当前 generic Linux/VMware 环境不引入 FastDDS 外部依赖。`RtpsTransmitter/RtpsReceiver` 是 RTPS-style local backend，用于验证抽象边界、消息校验、大 payload、sequence、CRC、drop/lost 统计和测试体系；真实 FastDDS/RTPS backend 留到后续 V2.3 与 reference transport 进一步融合。
 
 ## 已验证命令
 
@@ -92,7 +92,7 @@ make run EXAMPLE=22_transport_pattern
 
 ```text
 1. 真实 FastDDS/RTPS backend 尚未接入 AutoVision 主工程。
-2. CamMW 原仓库 FastDDS publisher/subscriber 与 AutoVision Transport API 的二进制兼容桥接尚未验证。
+2. reference transport 原仓库 FastDDS publisher/subscriber 与 AutoVision Transport API 的二进制兼容桥接尚未验证。
 3. 跨进程 RTPS/SHM 双模式真实 pub/sub 尚未替代当前 local backend。
 4. VMware 下 USB Camera RGB/YUYV 在本次容器无 /dev/video0，仍以既有工作日志为准，用户侧可继续复测。
 5. OPi5+/RK3588 板端 MPP/V4L2 M2M/RKNN/RGA/DMA-BUF 仍等待开发板验证。

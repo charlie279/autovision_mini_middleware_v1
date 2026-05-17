@@ -1,4 +1,3 @@
-
 #include "timestamp_sync.hpp"
 #include "udp_lidar_sim_adapter.hpp"
 #include "time_utils.hpp"

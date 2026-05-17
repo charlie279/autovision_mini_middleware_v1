@@ -3,7 +3,7 @@ set -euo pipefail
 
 FRAMES="${1:-20}"
 DEPTH="${2:-8}"
-WIDTH_NOTE="CamMW-style Transport pattern benchmark: Transport -> Transmitter -> Rtps/Shm backend -> Dispatcher -> Receiver"
+WIDTH_NOTE="reference transport-style Transport pattern benchmark: Transport -> Transmitter -> Rtps/Shm backend -> Dispatcher -> Receiver"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"

@@ -1,4 +1,3 @@
-
 /**
  * @file timestamp_sync.hpp
  * @brief Approximate timestamp synchronizer for camera and lidar metadata.

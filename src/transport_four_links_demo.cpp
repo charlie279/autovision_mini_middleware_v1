@@ -1,6 +1,6 @@
 /**
  * @file transport_four_links_demo.cpp
- * @brief AutoVision V2.1 CamMW-style four-link large payload validation demo.
+ * @brief AutoVision V2.1 reference transport-style four-link large payload validation demo.
  */
 #include "local_pubsub_transport.hpp"
 #include "transport_message.hpp"
@@ -125,7 +125,7 @@ ScenarioResult run_scenario(const Scenario& s, std::uint64_t frames,
     qos.reliable = false;
     qos.msg_size = std::max(max_payload, expected_size_for_scenario(s) + 64U);
 
-    avm::LocalPubSubTransport bus("avm/cammw/" + s.name, qos);
+    avm::LocalPubSubTransport bus("avm/reference_transport/" + s.name, qos);
     ScenarioResult result;
     result.name = s.name;
     result.kind = avm::transport_kind_to_string(s.kind);

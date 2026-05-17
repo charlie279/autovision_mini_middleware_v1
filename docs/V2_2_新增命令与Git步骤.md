@@ -59,12 +59,12 @@ make run EXAMPLE=22_transport_pattern
 ## 8. Git 分阶段提交建议
 
 ```bash
-git checkout v2.1-cammw-transport-bridge
+git checkout v2.1-transport-bridge
 git pull
 git checkout -b v2.2-transport-pattern
 
 git add include/transport_endpoint.hpp src/transport_endpoint.cpp
-git commit -m "v2.2-step1: add CamMW-style Transport endpoint abstraction"
+git commit -m "v2.2-step1: add reference transport-style Transport endpoint abstraction"
 
 git add src/transport_pattern_demo.cpp scripts/benchmark_transport_pattern.sh CMakeLists.txt
 git commit -m "v2.2-step2: add Transport pattern demo and benchmark script"

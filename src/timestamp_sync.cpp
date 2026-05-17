@@ -1,4 +1,3 @@
-
 /**
  * @file timestamp_sync.cpp
  * @brief TimestampSync implementation.

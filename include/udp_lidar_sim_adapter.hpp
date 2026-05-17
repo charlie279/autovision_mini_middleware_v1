@@ -1,4 +1,3 @@
-
 /**
  * @file udp_lidar_sim_adapter.hpp
  * @brief UDP Lidar simulator adapter. It accepts UDP packets carrying float32 ranges/points.
