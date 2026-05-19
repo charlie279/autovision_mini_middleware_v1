@@ -32,7 +32,8 @@ EXAMPLES := \
 	22_transport_pattern \
 	23_fastdds_packet_codec \
 	24_camera_fastdds_packet \
-	25_dds_shm_frame_meta
+	25_dds_shm_frame_meta \
+	26_gstreamer_pipeline_config
 
 SRCS_00_crc32 := $(CPP_DIR)/00_crc32.cpp ../src/crc32.cpp
 SRCS_01_latency_profiler := $(CPP_DIR)/01_latency_profiler.cpp ../src/latency_profiler.cpp
@@ -59,6 +60,7 @@ SRCS_22_transport_pattern := $(CPP_DIR)/22_transport_pattern.cpp ../src/transpor
 SRCS_23_fastdds_packet_codec := $(CPP_DIR)/23_fastdds_packet_codec.cpp ../src/fastdds_rtps_transport.cpp ../src/transport_message.cpp ../src/crc32.cpp
 SRCS_24_camera_fastdds_packet := $(CPP_DIR)/24_camera_fastdds_packet.cpp ../src/fastdds_rtps_transport.cpp ../src/transport_message.cpp ../src/crc32.cpp
 SRCS_25_dds_shm_frame_meta := $(CPP_DIR)/25_dds_shm_frame_meta.cpp ../src/dds_shm_frame_meta.cpp ../src/transport_message.cpp ../src/shm_frame_pool.cpp ../src/crc32.cpp
+SRCS_26_gstreamer_pipeline_config := $(CPP_DIR)/26_gstreamer_pipeline_config.cpp ../src/gstreamer_pipeline_config.cpp
 
 PIPELINE_SRCS_PRODUCER := $(CPP_DIR)/08_frame_producer.cpp ../src/shm_frame_pool.cpp ../src/shm_ring_buffer.cpp ../src/crc32.cpp
 PIPELINE_SRCS_CONSUMER := $(CPP_DIR)/08_frame_consumer.cpp ../src/shm_frame_pool.cpp ../src/shm_ring_buffer.cpp ../src/crc32.cpp
@@ -132,6 +134,8 @@ $(BIN_DIR)/24_camera_fastdds_packet: $(SRCS_24_camera_fastdds_packet) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 $(BIN_DIR)/25_dds_shm_frame_meta: $(SRCS_25_dds_shm_frame_meta) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+$(BIN_DIR)/26_gstreamer_pipeline_config: $(SRCS_26_gstreamer_pipeline_config) | dirs
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 frame_ipc: dirs
 	$(CXX) $(CXXFLAGS) $(PIPELINE_SRCS_PRODUCER) -o $(BIN_DIR)/08_frame_producer $(LDFLAGS)
@@ -154,4 +158,3 @@ run_frame_ipc: frame_ipc
 clean:
 	rm -rf $(BIN_DIR) logs
 	rm -f /dev/shm/avm_example_frame_pool /dev/shm/avm_example_frame_meta_ring /dev/shm/avm_example_status /dev/shm/avm_example_sensor_pool /dev/shm/avm_example_sensor_ring
-

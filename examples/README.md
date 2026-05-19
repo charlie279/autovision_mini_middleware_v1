@@ -48,3 +48,24 @@ make run EXAMPLE=25_dds_shm_frame_meta
 ```
 
 This example validates the V2.5 `SharedFrameDescriptor` codec without requiring FastDDS runtime. It writes a 640x480 YUYV payload into POSIX SHM, serializes only the descriptor metadata, parses it back, reads the payload from SHM, and verifies size/CRC. Expected result: `metadata_bytes=208`, `raw_payload_bytes=614400`, `size_errors=0`, `payload_errors=0`, `result=PASS`.
+
+## V2.6 GStreamer pipeline config example
+
+Example 26 is dependency-free. It validates that AutoVision can generate the intended GStreamer pipeline strings for:
+
+```text
+v4l2src -> capsfilter -> queue -> appsink name=appsink
+appsrc name=appsrc -> videoconvert -> x264enc/x265enc/raw -> filesink
+```
+
+Run:
+
+```bash
+make run EXAMPLE=26_gstreamer_pipeline_config
+```
+
+Expected:
+
+```text
+[26_gstreamer_pipeline_config] raw_payload_bytes=614400 capture_ok=1 encode_ok=1 size_ok=1 result=PASS
+```
