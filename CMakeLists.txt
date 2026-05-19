@@ -71,6 +71,7 @@ add_library(avm_transport
     src/local_pubsub_transport.cpp
     src/transport_endpoint.cpp
     src/fastdds_rtps_transport.cpp
+    src/dds_shm_frame_meta.cpp
 )
 target_link_libraries(avm_transport avm_common pthread)
 
@@ -98,6 +99,15 @@ target_link_libraries(camera_fastdds_pub avm_transport avm_common)
 
 add_executable(camera_fastdds_sub src/camera_fastdds_sub.cpp)
 target_link_libraries(camera_fastdds_sub avm_transport avm_common)
+
+add_executable(camera_dds_shm_pub
+    src/camera_dds_shm_pub.cpp
+    src/camera_adapter_v4l2.cpp
+)
+target_link_libraries(camera_dds_shm_pub avm_transport avm_common)
+
+add_executable(camera_dds_shm_sub src/camera_dds_shm_sub.cpp)
+target_link_libraries(camera_dds_shm_sub avm_transport avm_common)
 
 # ============================================================
 # V2.0 video encode module
