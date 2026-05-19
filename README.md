@@ -167,7 +167,39 @@ The stable-validation revision uses:
 
 - `--startup-ms 5000` before the first publish, giving DDS endpoint discovery time to match.
 - `--warmup-frames 10` and subscriber `--start-seq 11`, so warmup traffic is excluded from formal validation.
-- `--repeat 5` plus subscriber-side de-duplication, improving robustness for RTPS/UDP fragmented raw camera frames in VMware.
-- `--depth 512` and `--reliable` by default in V2.4 scripts.
+- `--repeat 10` plus subscriber-side de-duplication, improving robustness for RTPS/UDP fragmented raw camera frames in VMware.
+- `--depth 1024`, `--timeout-ms 120000` and `--reliable` by default in V2.4 scripts.
 
 Default builds without FastDDS still compile and report `NOT_COMPILED` clearly. Real FastDDS validation requires rebuilding with `-DAVM_ENABLE_FASTDDS=ON` and a valid FastDDS/Fast-CDR installation.
+
+## V2.5 DDS + SHM mixed route
+
+V2.5 adds a mixed-route Camera middleware validation path on top of V2.4:
+
+```text
+USB Camera / synthetic source
+    -> POSIX SHM FramePool raw payload
+    -> FastDDS / RTPS SharedFrameDescriptor metadata
+    -> subscriber reads SHM payload
+    -> size / CRC / sequence / latency validation
+```
+
+Compared with V2.4 raw frame over FastDDS, V2.5 keeps DDS payload small by publishing only metadata. For 640x480 YUYV, the raw payload is 614400 bytes while the descriptor payload is about 208 bytes.
+
+Dependency-free validation:
+
+```bash
+./scripts/build.sh
+cd examples && make run EXAMPLE=25_dds_shm_frame_meta
+./scripts/benchmark_camera_dds_shm.sh 5 640 480 30 yuyv
+```
+
+Real FastDDS validation after installing FastDDS/Fast-CDR:
+
+```bash
+./scripts/build.sh -DAVM_ENABLE_FASTDDS=ON -DCMAKE_PREFIX_PATH=$HOME/Fast-DDS/install
+./scripts/benchmark_camera_dds_shm.sh 300 640 480 30 yuyv avm/camera/dds_shm_synthetic_meta /avm_camera_dds_shm_synthetic_pool
+./scripts/run_camera_dds_shm.sh /dev/video0 300 640 480 30 yuyv avm/camera/dds_shm_raw_meta /avm_camera_dds_shm_raw_pool
+```
+
+Scope boundary: V2.5 validates metadata over DDS plus payload over POSIX SHM on a single machine. It does not claim cross-host SHM sharing, DMA-BUF zero-copy, typed DDS IDL, or production functional safety certification.
