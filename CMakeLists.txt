@@ -149,3 +149,29 @@ endif()
 add_executable(encode_sink_node src/encode_sink_node.cpp)
 target_link_libraries(encode_sink_node avm_encoder avm_common)
 
+# ============================================================
+# V2.6 GStreamer camera pipeline module
+# ============================================================
+option(AVM_ENABLE_GSTREAMER "Enable GStreamer appsink/appsrc camera pipeline" OFF)
+
+add_library(avm_gstreamer
+    src/gstreamer_pipeline_config.cpp
+    src/gstreamer_camera_adapter.cpp
+)
+target_link_libraries(avm_gstreamer avm_common pthread)
+
+if(AVM_ENABLE_GSTREAMER)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0 gstreamer-app-1.0)
+    target_compile_definitions(avm_gstreamer PUBLIC AVM_HAS_GSTREAMER)
+    target_include_directories(avm_gstreamer PUBLIC ${GSTREAMER_INCLUDE_DIRS})
+    target_compile_options(avm_gstreamer PUBLIC ${GSTREAMER_CFLAGS_OTHER})
+    target_link_libraries(avm_gstreamer ${GSTREAMER_LIBRARIES})
+    target_link_directories(avm_gstreamer PUBLIC ${GSTREAMER_LIBRARY_DIRS})
+endif()
+
+add_executable(gstreamer_camera_capture_node src/gstreamer_camera_capture_node.cpp)
+target_link_libraries(gstreamer_camera_capture_node avm_gstreamer avm_common)
+
+add_executable(gstreamer_encode_stream_node src/gstreamer_encode_stream_node.cpp)
+target_link_libraries(gstreamer_encode_stream_node avm_gstreamer avm_common)
