@@ -203,3 +203,50 @@ Real FastDDS validation after installing FastDDS/Fast-CDR:
 ```
 
 Scope boundary: V2.5 validates metadata over DDS plus payload over POSIX SHM on a single machine. It does not claim cross-host SHM sharing, DMA-BUF zero-copy, typed DDS IDL, or production functional safety certification.
+
+## V2.6 GStreamer Camera Pipeline
+
+V2.6 adds an optional GStreamer media-framework path on top of the V2.5 DDS + SHM mixed-route base:
+
+```text
+USB Camera /dev/video0
+    -> v4l2src
+    -> video/x-raw capsfilter
+    -> queue
+    -> appsink name=appsink
+    -> GStreamerCameraAdapter
+    -> AutoVision SensorFrame
+```
+
+It also adds an appsrc-based encode/stream demo:
+
+```text
+SensorFrame synthetic or GStreamer camera frame
+    -> appsrc name=appsrc
+    -> videoconvert
+    -> x264enc / x265enc / raw filesink
+```
+
+Default builds remain dependency-free and the new binaries report `NOT_COMPILED` when GStreamer headers/libraries are not enabled. Real GStreamer builds require:
+
+```bash
+./scripts/build.sh -DAVM_ENABLE_GSTREAMER=ON
+```
+
+Dependency-free validation:
+
+```bash
+./scripts/build.sh
+cd examples && make run EXAMPLE=26_gstreamer_pipeline_config
+./scripts/benchmark_gstreamer_camera.sh /dev/video0 5 640 480 30 yuyv
+```
+
+Real camera validation after installing GStreamer development/runtime packages:
+
+```bash
+./scripts/build.sh -DAVM_ENABLE_GSTREAMER=ON
+./scripts/run_gstreamer_camera_capture.sh /dev/video0 300 640 480 30 yuyv
+./scripts/run_gstreamer_encode_stream.sh synthetic /dev/video0 120 640 480 30 yuyv h264 logs/gstreamer_output.h264
+```
+
+Scope boundary: V2.6 validates GStreamer appsink/appsrc integration. The `--use-dmabuf` path requests `v4l2src io-mode=dmabuf`, but the current appsink adapter still maps/copies payload into `SensorFrame.data`; true DMA-BUF fd handoff and zero-copy ownership transfer are reserved for board-side V3.x work.
