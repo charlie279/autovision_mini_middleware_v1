@@ -31,7 +31,8 @@ EXAMPLES := \
 	21_transport_four_links \
 	22_transport_pattern \
 	23_fastdds_packet_codec \
-	24_camera_fastdds_packet
+	24_camera_fastdds_packet \
+	25_dds_shm_frame_meta
 
 SRCS_00_crc32 := $(CPP_DIR)/00_crc32.cpp ../src/crc32.cpp
 SRCS_01_latency_profiler := $(CPP_DIR)/01_latency_profiler.cpp ../src/latency_profiler.cpp
@@ -57,6 +58,7 @@ SRCS_21_transport_four_links := $(CPP_DIR)/21_transport_four_links.cpp ../src/tr
 SRCS_22_transport_pattern := $(CPP_DIR)/22_transport_pattern.cpp ../src/transport_message.cpp ../src/local_pubsub_transport.cpp ../src/transport_endpoint.cpp ../src/crc32.cpp
 SRCS_23_fastdds_packet_codec := $(CPP_DIR)/23_fastdds_packet_codec.cpp ../src/fastdds_rtps_transport.cpp ../src/transport_message.cpp ../src/crc32.cpp
 SRCS_24_camera_fastdds_packet := $(CPP_DIR)/24_camera_fastdds_packet.cpp ../src/fastdds_rtps_transport.cpp ../src/transport_message.cpp ../src/crc32.cpp
+SRCS_25_dds_shm_frame_meta := $(CPP_DIR)/25_dds_shm_frame_meta.cpp ../src/dds_shm_frame_meta.cpp ../src/transport_message.cpp ../src/shm_frame_pool.cpp ../src/crc32.cpp
 
 PIPELINE_SRCS_PRODUCER := $(CPP_DIR)/08_frame_producer.cpp ../src/shm_frame_pool.cpp ../src/shm_ring_buffer.cpp ../src/crc32.cpp
 PIPELINE_SRCS_CONSUMER := $(CPP_DIR)/08_frame_consumer.cpp ../src/shm_frame_pool.cpp ../src/shm_ring_buffer.cpp ../src/crc32.cpp
@@ -127,6 +129,8 @@ $(BIN_DIR)/22_transport_pattern: $(SRCS_22_transport_pattern) | dirs
 $(BIN_DIR)/23_fastdds_packet_codec: $(SRCS_23_fastdds_packet_codec) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 $(BIN_DIR)/24_camera_fastdds_packet: $(SRCS_24_camera_fastdds_packet) | dirs
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+$(BIN_DIR)/25_dds_shm_frame_meta: $(SRCS_25_dds_shm_frame_meta) | dirs
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 frame_ipc: dirs

@@ -40,3 +40,11 @@ make run EXAMPLE=24_camera_fastdds_packet
 ```
 
 This example validates 640x480 camera raw frame packet serialization without requiring FastDDS runtime. It checks that V2.4's 2MiB QoS accepts both YUYV and RGB888 raw camera payloads, while the old 512KiB boundary fails for a 640x480 YUYV frame as expected.
+
+## V2.5 DDS + SHM frame metadata example
+
+```bash
+make run EXAMPLE=25_dds_shm_frame_meta
+```
+
+This example validates the V2.5 `SharedFrameDescriptor` codec without requiring FastDDS runtime. It writes a 640x480 YUYV payload into POSIX SHM, serializes only the descriptor metadata, parses it back, reads the payload from SHM, and verifies size/CRC. Expected result: `metadata_bytes=208`, `raw_payload_bytes=614400`, `size_errors=0`, `payload_errors=0`, `result=PASS`.
